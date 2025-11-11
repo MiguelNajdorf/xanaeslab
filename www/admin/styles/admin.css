@@ -1,0 +1,50 @@
+.admin-main {
+  padding: clamp(1rem, 4vw, 2rem);
+  display: grid;
+  gap: 1.5rem;
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.stats-grid h3 {
+  margin-bottom: 0.25rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.form-grid label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+}
+
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+}
+
+.panel .list-item {
+  background: rgba(43, 58, 103, 0.05);
+}
+
+.table-container table td:last-child button {
+  margin-right: 0.5rem;
+}
+
+.table-container table button {
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+}

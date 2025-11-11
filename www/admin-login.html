@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Iniciar sesión</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel">
+      <h1>Panel de administración</h1>
+      <p>Ingresá con tu correo y contraseña para gestionar supermercados, categorías y productos.</p>
+      <form id="login-form" class="form-grid">
+        <label>
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="username" />
+        </label>
+        <label>
+          <span>Contraseña</span>
+          <input type="password" name="password" required autocomplete="current-password" />
+        </label>
+        <button type="submit" class="button">Ingresar</button>
+      </form>
+      <p id="login-status" role="status" class="status"></p>
+      <p>
+        Una vez autenticado, accedé al <a href="./admin-dashboard.html">panel principal</a>.
+      </p>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/adminLoginPage.js"></script>
+</body>
+</html>

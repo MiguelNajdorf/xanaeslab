@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparador de canasta</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 960px;">
+      <header>
+        <h1>Comparador de canasta</h1>
+        <p id="compare-status" class="status"></p>
+      </header>
+
+      <section>
+        <h2>Carrito actual</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody id="cart-items"></tbody>
+          </table>
+        </div>
+        <button type="button" id="refresh-compare" class="button">Recalcular</button>
+      </section>
+
+      <section>
+        <h2>Mejor precio por ítem</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Supermercado</th>
+                <th>Precio</th>
+                <th>Actualizado</th>
+              </tr>
+            </thead>
+            <tbody id="mix-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Mejor supermercado único</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Supermercado</th>
+                <th>Total estimado</th>
+              </tr>
+            </thead>
+            <tbody id="single-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Resumen</h2>
+        <ul id="compare-summary"></ul>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/comparatorPage.js"></script>
+</body>
+</html>

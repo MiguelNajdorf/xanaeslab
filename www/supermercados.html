@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM Supermercados</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 960px;">
+      <header>
+        <h1>Supermercados</h1>
+        <p class="status" id="page-status"></p>
+      </header>
+
+      <section>
+        <h2>Buscar</h2>
+        <form id="search-form" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <label>
+            <span>Nombre o ciudad</span>
+            <input type="search" name="q" placeholder="Ej: Xanaes" />
+          </label>
+          <label>
+            <span>Estado</span>
+            <select name="is_active">
+              <option value="">Todos</option>
+              <option value="1">Activos</option>
+              <option value="0">Inactivos</option>
+            </select>
+          </label>
+          <label>
+            <span>Orden</span>
+            <select name="order">
+              <option value="name">Nombre A-Z</option>
+              <option value="-name">Nombre Z-A</option>
+              <option value="-updated_at">Más recientes</option>
+            </select>
+          </label>
+          <div class="actions">
+            <button type="submit" class="button">Buscar</button>
+            <button type="button" id="reset-search" class="button ghost">Limpiar</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Ciudad</th>
+                <th>Estado</th>
+                <th>Teléfono</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="super-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Nuevo / Editar</h2>
+        <form id="super-form" class="form-grid">
+          <input type="hidden" name="id" />
+          <div class="grid-two">
+            <label><span>Nombre</span><input name="name" required /></label>
+            <label><span>Slug</span><input name="slug" required /></label>
+            <label><span>Dirección</span><input name="address" /></label>
+            <label><span>Ciudad</span><input name="city" /></label>
+            <label><span>Provincia</span><input name="state" /></label>
+            <label><span>Código postal</span><input name="zip" /></label>
+            <label><span>Teléfono</span><input name="phone" /></label>
+            <label><span>Sitio web</span><input name="website" /></label>
+            <label><span>Activo</span>
+              <select name="is_active">
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </label>
+          </div>
+          <div class="actions">
+            <button type="submit" class="button" id="save-super">Guardar</button>
+            <button type="reset" class="button ghost">Limpiar</button>
+            <button type="button" class="button secondary" id="delete-super">Eliminar</button>
+          </div>
+          <p id="super-status" class="status"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Horarios de atención</h2>
+        <details>
+          <summary>Definir horarios semanales para el supermercado seleccionado</summary>
+          <form id="hours-form" class="form-grid">
+            <p>Elegí un supermercado de la tabla y completá los horarios para cada día.</p>
+            <div class="grid-two" id="hours-grid"></div>
+            <button type="submit" class="button">Guardar horarios</button>
+            <p id="hours-status" class="status"></p>
+          </form>
+        </details>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/supermercadosPage.js"></script>
+</body>
+</html>

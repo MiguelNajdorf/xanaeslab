@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Precios por supermercado</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 1080px;">
+      <header>
+        <h1>Precios por supermercado</h1>
+        <p id="page-status" class="status"></p>
+      </header>
+
+      <section>
+        <form id="price-form" class="form-grid">
+          <label>
+            <span>Supermercado</span>
+            <select name="supermarket_id" required></select>
+          </label>
+          <label>
+            <span>Producto</span>
+            <select name="product_id" required></select>
+          </label>
+          <label><span>Precio</span><input type="number" name="price" min="0" step="0.01" required /></label>
+          <label><span>Moneda</span><input name="currency" value="ARS" maxlength="3" required /></label>
+          <label>
+            <span>Estado de stock</span>
+            <select name="stock_status">
+              <option value="in_stock">En stock</option>
+              <option value="out_of_stock">Sin stock</option>
+              <option value="unknown">Desconocido</option>
+            </select>
+          </label>
+          <label><span>Etiqueta promo</span><input name="promo_label" /></label>
+          <div class="actions">
+            <button type="submit" class="button">Guardar precio</button>
+          </div>
+          <p id="price-status" class="status"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Precios registrados</h2>
+        <form id="price-filters" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <label>
+            <span>Supermercado</span>
+            <select name="supermarket_id"><option value="">Todos</option></select>
+          </label>
+          <label>
+            <span>Producto</span>
+            <select name="product_id"><option value="">Todos</option></select>
+          </label>
+          <label><span>Precio máximo</span><input type="number" name="price_max" step="0.01" min="0" /></label>
+          <label><span>Actualizado desde</span><input type="date" name="updated_since" /></label>
+          <button type="submit" class="button">Filtrar</button>
+        </form>
+        <div class="table-wrapper" style="max-height: 320px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Supermercado</th>
+                <th>Producto</th>
+                <th>Precio</th>
+                <th>Moneda</th>
+                <th>Stock</th>
+                <th>Actualizado</th>
+              </tr>
+            </thead>
+            <tbody id="price-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/pricesPage.js"></script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+import { ensureSeedData, getSelectedCity, setSelectedCity, getPreferences, purgeVencidas } from './store.js';
+import { createComparatorView } from './ui/comparator.js';
+import { createCartView } from './ui/cartView.js';
+import { createSupermarketsView } from './ui/supermarkets.js';
+import { createProductDetailView } from './ui/productDetail.js';
+
+const ciudadesDisponibles = ['Rio Segundo', 'Pilar'];
+const appRoot = document.getElementById('app');
+const citySelect = document.getElementById('city-select');
+const legalHighlight = document.querySelector('.legal-highlight');
+
+const rateLimitWindow = 60 * 1000;
+const rateLimitMax = 60;
+const rateLimitLog = [];
+
+window.fetch = createRateLimitedFetch(window.fetch.bind(window));
+
+init();
+
+async function init() {
+  initCitySelect();
+  await ensureSeedData();
+  aplicarAjustes();
+  router();
+  window.addEventListener('hashchange', router);
+}
+
+function initCitySelect() {
+  citySelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = 'Seleccioná ciudad';
+  citySelect.appendChild(placeholder);
+  ciudadesDisponibles.forEach(ciudad => {
+    const option = document.createElement('option');
+    option.value = ciudad;
+    option.textContent = ciudad;
+    citySelect.appendChild(option);
+  });
+  citySelect.addEventListener('change', () => {
+    const ciudad = citySelect.value;
+    if (ciudad) {
+      setSelectedCity(ciudad);
+      router();
+    }
+  });
+  const seleccionada = getSelectedCity();
+  let ciudadInicial = seleccionada;
+  if (!ciudadInicial) {
+    const prefs = getPreferences();
+    const porDefecto = prefs['ajuste:ciudad_defecto'];
+    if (porDefecto && ciudadesDisponibles.includes(porDefecto)) {
+      ciudadInicial = porDefecto;
+    }
+  }
+  if (ciudadInicial && ciudadesDisponibles.includes(ciudadInicial)) {
+    citySelect.value = ciudadInicial;
+    setSelectedCity(ciudadInicial);
+  }
+}
+
+async function router() {
+  const ciudad = citySelect.value;
+  if (!ciudad) {
+    renderSeleccionCiudad();
+    return;
+  }
+  const hash = window.location.hash.replace('#', '') || '/';
+  if (hash.startsWith('/producto/')) {
+    const [, , id] = hash.split('/');
+    renderProductoDetalle(ciudad, Number(id));
+    return;
+  }
+  switch (hash) {
+    case '/comparador':
+      renderComparador(ciudad);
+      break;
+    case '/changuito':
+      renderChanguito(ciudad);
+      break;
+    case '/supermercados':
+      renderSupermercados(ciudad);
+      break;
+    case '/':
+    default:
+      renderHome(ciudad);
+  }
+}
+
+function renderSeleccionCiudad() {
+  appRoot.textContent = '';
+  const aviso = document.createElement('section');
+  aviso.className = 'section-card';
+  const texto = document.createElement('p');
+  texto.textContent = 'Seleccioná una ciudad para comenzar a comparar precios.';
+  aviso.appendChild(texto);
+  appRoot.appendChild(aviso);
+}
+
+function renderHome(ciudad) {
+  const template = document.getElementById('home-template');
+  const clone = template.content.cloneNode(true);
+  const legal = clone.querySelector('.legal-highlight');
+  legal.textContent = obtenerLeyendaLegal();
+  clone.querySelectorAll('.category-pill').forEach(button => {
+    button.addEventListener('click', () => {
+      window.location.hash = '#/comparador';
+    });
+  });
+  appRoot.textContent = '';
+  appRoot.appendChild(clone);
+}
+
+function renderComparador(ciudad) {
+  appRoot.textContent = '';
+  purgeVencidas();
+  const view = createComparatorView({ ciudad, onOpenProducto: (id) => {
+    window.location.hash = `#/producto/${id}`;
+  } });
+  appRoot.appendChild(view);
+}
+
+function renderChanguito(ciudad) {
+  appRoot.textContent = '';
+  const view = createCartView({ ciudad });
+  appRoot.appendChild(view);
+}
+
+function renderSupermercados(ciudad) {
+  appRoot.textContent = '';
+  const view = createSupermarketsView({ ciudad });
+  appRoot.appendChild(view);
+}
+
+function renderProductoDetalle(ciudad, productoId) {
+  appRoot.textContent = '';
+  const view = createProductDetailView({ ciudad, productoId, onBack: () => {
+    window.location.hash = '#/comparador';
+  } });
+  appRoot.appendChild(view);
+}
+
+function aplicarAjustes() {
+  const ajustes = getPreferences();
+  if (ajustes['ajuste:legal']) {
+    legalHighlight.textContent = ajustes['ajuste:legal'];
+  } else {
+    legalHighlight.textContent = 'Actualizamos semanalmente según disponibilidad pública de cada supermercado.';
+  }
+}
+
+function obtenerLeyendaLegal() {
+  return legalHighlight?.textContent || '';
+}
+
+function createRateLimitedFetch(originalFetch) {
+  return async function rateLimitedFetch(input, init) {
+    const now = Date.now();
+    while (rateLimitLog.length && now - rateLimitLog[0] > rateLimitWindow) {
+      rateLimitLog.shift();
+    }
+    if (rateLimitLog.length >= rateLimitMax) {
+      const warning = document.querySelector('.rate-limit-warning');
+      if (!warning) {
+        const banner = document.createElement('div');
+        banner.className = 'rate-limit-warning';
+        banner.textContent = 'Alcanzaste el límite de consultas por minuto. Intentá nuevamente en unos instantes.';
+        document.body.prepend(banner);
+        setTimeout(() => banner.remove(), 4000);
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return rateLimitedFetch(input, init);
+    }
+    rateLimitLog.push(now);
+    return originalFetch(input, init);
+  };
+}

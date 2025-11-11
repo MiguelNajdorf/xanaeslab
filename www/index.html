@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Xanaes Lab</title>
+  <link rel="manifest" href="./assets/manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+  <link rel="stylesheet" href="./styles/main.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-badge">Xanaes Lab</span>
+      <p class="brand-tagline">Comparador inteligente de precios para Río Segundo y Pilar</p>
+    </div>
+    <div class="city-selector">
+      <label for="city-select">Ciudad</label>
+      <select id="city-select" aria-label="Seleccionar ciudad"></select>
+    </div>
+    <nav class="main-nav" aria-label="Principal">
+      <a href="#/" data-route="/" class="nav-link">Inicio</a>
+      <a href="#/comparador" data-route="/comparador" class="nav-link">Comparador</a>
+      <a href="#/changuito" data-route="/changuito" class="nav-link">Changuito</a>
+      <a href="#/supermercados" data-route="/supermercados" class="nav-link">Supermercados</a>
+      <a href="./admin/admin.html" class="nav-link nav-admin">Admin</a>
+    </nav>
+  </header>
+
+  <main id="app" class="app-shell" tabindex="-1"></main>
+
+  <footer class="legal-footer">
+    <p>Los precios y vigencias son obtenidos de revistas públicas de cada supermercado. Xanaes Lab no se responsabiliza por diferencias en góndola.</p>
+  </footer>
+
+  <template id="home-template">
+    <section class="hero">
+      <h1>Encontrá el mejor precio en segundos</h1>
+      <p>Explorá las categorías destacadas o buscá entre cientos de ofertas de supermercados locales.</p>
+      <div class="hero-actions">
+        <a class="cta" href="#/comparador">Ir al comparador</a>
+        <a class="cta secondary" href="#/changuito">Armar changuito</a>
+      </div>
+    </section>
+    <section class="top-categories" aria-labelledby="top-categories-title">
+      <h2 id="top-categories-title">Categorías destacadas</h2>
+      <div class="categories-grid">
+        <button class="category-pill" data-category="Almacén">Almacén</button>
+        <button class="category-pill" data-category="Lácteos">Lácteos</button>
+        <button class="category-pill" data-category="Bebidas">Bebidas</button>
+        <button class="category-pill" data-category="Limpieza">Limpieza</button>
+        <button class="category-pill" data-category="Frescos">Frescos</button>
+      </div>
+    </section>
+    <section class="quick-links" aria-label="Accesos rápidos">
+      <a class="quick-link" href="#/comparador">Comparador</a>
+      <a class="quick-link" href="#/changuito">Changuito</a>
+      <a class="quick-link" href="#/supermercados">Supermercados</a>
+    </section>
+    <section class="legal-highlight" aria-live="polite"></section>
+  </template>
+
+  <script type="module" src="./scripts/app.js"></script>
+</body>
+</html>

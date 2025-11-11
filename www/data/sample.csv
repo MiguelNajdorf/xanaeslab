@@ -1,0 +1,16 @@
+supermercado,ciudad,categoria,producto,marca,presentacion,sku_presentacion_capturada,promo_tipo,promo_param,promo_condicion,precio_individual,precio_total,moneda,vigencia_desde,vigencia_hasta,fuente,id_externo,pagina,posicion
+Super Rio,Rio Segundo,Almacén,Arroz Largo Fino,Primor,1 kg bolsa,1kg,ninguna,,,"320,00",,ARS,2023-10-01,2023-11-30,Revista Octubre,ARZ001,5,12
+Super Rio,Rio Segundo,Lácteos,Leche Entera,La Serenísima,1 L sachet,1L,porcentaje,10,,"250,00",,ARS,2023-10-05,2023-11-15,Revista Octubre,LCH010,3,8
+Super Rio,Rio Segundo,Bebidas,Gaseosa Cola,Libre,2.25 L botella,2.25L,3x2,,,"750,00",,ARS,2023-09-25,2023-10-31,Revista Octubre,BEB220,7,4
+Maxi Pilar,Pilar,Limpieza,Detergente Líquido,Brillamax,750 ml,750ml,2da_50,,,"540,00",,ARS,2023-10-10,2023-11-20,Revista Octubre,LIM310,2,3
+Maxi Pilar,Pilar,Frescos,Carne Molida,Frigor,500 g bandeja,500g,ninguna,,,"1890,00",,ARS,2023-10-12,2023-10-25,Revista Octubre,FRS014,4,9
+Mercado Central,Rio Segundo,Bebidas,Agua Mineral,Serra,2 L botella,2L,ninguna,,,"190,00",,ARS,2023-09-29,2023-11-02,Revista Octubre,BEB015,6,5
+Mercado Central,Rio Segundo,Almacén,Aceite de Girasol,Sol del Valle,900 ml,900ml,2x1,,,"980,00",,ARS,2023-10-01,2023-10-20,Revista Octubre,ACE450,8,11
+Mercado Central,Rio Segundo,Lácteos,Yogur Bebible,Vacalin,1 L botella,1L,precio_unidad,,,"410,00",,ARS,2023-10-03,2023-11-12,Revista Octubre,YOG032,5,6
+Mercado Central,Rio Segundo,Almacén,Fideos Spaghetti,Lucchetti,500 g paquete,500g,ninguna,,,"230,00",,ARS,2023-10-01,2023-11-10,Revista Octubre,FD001,1,1
+Super Rio,Rio Segundo,Frescos,Manzana Roja,Patagonia,1 kg,1kg,precio_banco,,Banco Nación,"650,00",,ARS,2023-10-08,2023-10-28,Revista Octubre,FRU221,9,2
+Maxi Pilar,Pilar,Almacén,Harina 000,Blanca Flor,1 kg,1kg,ninguna,,,"280,00",,ARS,2023-09-30,2023-11-05,Revista Octubre,HRN111,2,1
+Maxi Pilar,Pilar,Bebidas,Cerveza Rubia,Andes,1 L lata,1L,porcentaje,15,,"790,00",,ARS,2023-10-01,2023-11-07,Revista Octubre,BEB441,10,7
+Maxi Pilar,Pilar,Lácteos,Queso Cremoso,Ilolay,1 kg horma,1kg,suma_fija,1350,,"480,00",,ARS,2023-10-02,2023-11-15,Revista Octubre,LCT551,4,10
+Mercado Pilar,Pilar,Limpieza,Jabón en Polvo,Ala,800 g,800g,ninguna,,,"630,00",,ARS,2023-10-05,2023-11-01,Revista Octubre,LIM122,3,6
+Mercado Pilar,Pilar,Frescos,Tomate Perita,Huerta,1 kg,1kg,ninguna,,,"520,00",,ARS,2023-10-09,2023-10-31,Revista Octubre,FRS902,6,12

@@ -1,0 +1,6 @@
+{
+  "appId": "app.xanaes.lab",
+  "appName": "Xanaes Lab",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

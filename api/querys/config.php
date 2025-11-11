@@ -4,9 +4,9 @@
 declare(strict_types=1);
 
 const DB_HOST = 'localhost';
-const DB_NAME = 'xanaeslab';
-const DB_USER = 'xanaeslab_user';
-const DB_PASS = 'xanaeslab_pass';
+const DB_NAME = 'adev_xanaeslab';
+const DB_USER = 'adev_xanaeslab';
+const DB_PASS = 'YermanFerozo768';
 const DB_CHARSET = 'utf8mb4';
 
 function get_pdo(): PDO

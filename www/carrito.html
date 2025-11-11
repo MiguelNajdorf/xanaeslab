@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrito de compras</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 780px;">
+      <header>
+        <h1>Carrito</h1>
+        <p id="cart-status" class="status"></p>
+      </header>
+
+      <section>
+        <h2>Agregar producto</h2>
+        <form id="add-form" class="form-grid">
+          <label><span>ID de producto</span><input name="product_id" type="number" min="1" required /></label>
+          <label><span>Cantidad</span><input name="quantity" type="number" min="0.1" step="0.1" value="1" required /></label>
+          <button type="submit" class="button">Agregar</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Productos en el carrito</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cart-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button type="button" id="refresh-cart" class="button ghost">Actualizar</button>
+        <button type="button" id="finalize-cart" class="button secondary">Finalizar carrito</button>
+      </div>
+      <p id="finalize-status" class="status"></p>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/cartPage.js"></script>
+</body>
+</html>

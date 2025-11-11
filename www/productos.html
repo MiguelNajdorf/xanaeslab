@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM Productos</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 1080px;">
+      <header>
+        <h1>Productos</h1>
+        <p id="page-status" class="status"></p>
+      </header>
+
+      <section>
+        <h2>Buscar productos</h2>
+        <form id="search-form" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+          <label><span>Texto</span><input type="search" name="q" placeholder="Nombre o marca" /></label>
+          <label><span>Categoría ID</span><input type="number" name="category_id" min="1" /></label>
+          <label><span>Barcode</span><input type="text" name="barcode" /></label>
+          <label><span>Límite</span><input type="number" name="limit" value="50" min="1" max="100" /></label>
+          <div class="actions">
+            <button type="submit" class="button">Buscar</button>
+            <button type="button" id="reset-search" class="button ghost">Limpiar</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <div class="table-wrapper" style="max-height: 320px; overflow-y: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Marca</th>
+                <th>Categoría</th>
+                <th>Unidad</th>
+                <th>Tamaño</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="products-table"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section>
+        <h2>Crear / Editar</h2>
+        <form id="product-form" class="form-grid">
+          <input type="hidden" name="id" />
+          <div class="grid-two">
+            <label><span>Nombre</span><input name="name" required /></label>
+            <label><span>Marca</span><input name="brand" /></label>
+            <label><span>Categoría ID</span><input name="category_id" type="number" min="1" required /></label>
+            <label><span>Unidad</span><input name="unit" placeholder="kg, lt, u" required /></label>
+            <label><span>Tamaño</span><input name="size" /></label>
+            <label><span>Barcode</span><input name="barcode" /></label>
+          </div>
+          <div class="actions">
+            <button type="submit" class="button">Guardar</button>
+            <button type="reset" class="button ghost">Limpiar</button>
+            <button type="button" id="delete-product" class="button secondary">Eliminar</button>
+          </div>
+          <p id="product-status" class="status"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Carga masiva desde CSV</h2>
+        <form id="bulk-form" class="form-grid">
+          <label>
+            <span>Archivo CSV</span>
+            <input type="file" name="csv" accept="text/csv" />
+          </label>
+          <button type="submit" class="button">Subir y procesar</button>
+          <p id="bulk-status" class="status"></p>
+        </form>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/productsPage.js"></script>
+</body>
+</html>

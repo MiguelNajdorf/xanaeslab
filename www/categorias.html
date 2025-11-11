@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM Categorías</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack" style="max-width: 820px;">
+      <header>
+        <h1>Categorías</h1>
+        <p class="status" id="page-status"></p>
+      </header>
+
+      <section>
+        <form id="category-form" class="form-grid">
+          <input type="hidden" name="id" />
+          <label><span>Nombre</span><input name="name" required /></label>
+          <label><span>Slug</span><input name="slug" required /></label>
+          <label><span>Descripción</span><textarea name="description" rows="3"></textarea></label>
+          <div class="actions">
+            <button type="submit" class="button">Guardar</button>
+            <button type="reset" class="button ghost">Limpiar</button>
+            <button type="button" class="button secondary" id="delete-category">Eliminar</button>
+          </div>
+          <p id="category-status" class="status"></p>
+        </form>
+      </section>
+
+      <section>
+        <h2>Listado</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Slug</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="category-table"></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/categoriesPage.js"></script>
+</body>
+</html>

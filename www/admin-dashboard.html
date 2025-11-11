@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel administrador</title>
+  <link rel="stylesheet" href="./styles/forms.css" />
+</head>
+<body>
+  <main class="form-shell">
+    <section class="panel stack">
+      <header>
+        <h1>Panel administrador</h1>
+        <p id="admin-info" class="status"></p>
+      </header>
+
+      <section>
+        <h2>Gestión</h2>
+        <div class="actions">
+          <a class="button" href="./supermercados.html">Supermercados</a>
+          <a class="button" href="./categorias.html">Categorías</a>
+          <a class="button" href="./productos.html">Productos</a>
+          <a class="button" href="./precios.html">Precios por supermercado</a>
+        </div>
+      </section>
+
+      <section>
+        <h2>Operaciones</h2>
+        <div class="actions">
+          <a class="button ghost" href="./comparador.html">Comparador</a>
+          <a class="button ghost" href="./carrito.html">Carrito</a>
+        </div>
+      </section>
+
+      <button type="button" id="logout" class="button secondary">Cerrar sesión</button>
+      <p id="logout-status" class="status" role="status"></p>
+    </section>
+  </main>
+  <script type="module" src="./scripts/pages/adminDashboardPage.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+# --- Archivos generales ---
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# --- Node y Capacitor ---
+node_modules/
+www/node_modules/
+dist/
+out/
+build/
+
+# --- Android (mantener estructura limpia) ---
+/android/.gradle/
+/android/.idea/
+/android/app/build/
+/android/build/
+/android/capacitor-cordova-android-plugins/src/main/libs/
+
+# Mantener el resto de la carpeta android
+!/android/app/
+!/android/gradle.properties
+!/android/build.gradle
+!/android/settings.gradle
+!/android/variables.gradle
+!/android/capacitor.settings.gradle
+!/android/gradlew
+!/android/gradlew.bat
+!/android/gradle/
+!/android/keystore.properties
+!/android/release-key2.jks
+
+# --- Archivos de Capacitor raíz ---
+capacitor.config.json
+package-lock.json
+
+# --- Config locales ---
+.env
+.env.*
+
+# --- Sistema y editor ---
+.vscode/
+.idea/

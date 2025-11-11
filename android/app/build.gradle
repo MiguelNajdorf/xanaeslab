@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace "app.xanaes.lab"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "app.xanaes.lab"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    packagingOptions {
+        resources {
+            excludes += ["META-INF/*"]
+        }
+    }
+
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+    implementation "androidx.appcompat:appcompat:${rootProject.ext.androidxAppCompatVersion}"
+    implementation "com.google.android.material:material:${rootProject.ext.materialDesignVersion}"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:${rootProject.ext.androidxCoordinatorLayoutVersion}"
+    implementation "androidx.core:core-splashscreen:${rootProject.ext.androidxCoreSplashscreenVersion}"
+    testImplementation "junit:junit:${rootProject.ext.junitVersion}"
+    androidTestImplementation "androidx.test.ext:junit:${rootProject.ext.androidxJunitVersion}"
+    androidTestImplementation "androidx.test.espresso:espresso-core:${rootProject.ext.androidxEspressoCoreVersion}"
+}

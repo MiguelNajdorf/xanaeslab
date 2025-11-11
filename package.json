@@ -1,0 +1,16 @@
+{
+  "name": "xanaes-lab",
+  "version": "1.0.0",
+  "description": "Xanaes Lab comparador de precios para Rio Segundo y Pilar",
+  "type": "module",
+  "scripts": {
+    "start": "npx http-server www -o -c-1",
+    "lint": "echo 'No lint configurado'",
+    "test": "node www/scripts/tests/smoke.js",
+    "build:android": "npx cap copy android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "http-server": "14.1.1"
+  }
+}

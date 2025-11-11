@@ -1,4 +1,4 @@
-const API_BASE = 'https://anagramdev.com/apps/xanaeslab/querys/';
+const API_BASE = 'https://anagramdev.com/apps/xanaeslab/querys/querys/';
 
 function buildUrl(endpoint, params) {
   const url = new URL(endpoint, API_BASE);

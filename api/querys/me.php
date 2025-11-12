@@ -9,5 +9,5 @@ require_http_method(['GET']);
 
 $user = require_authenticated();
 
-json_success(['user' => $user]);
+json_success($user);
 

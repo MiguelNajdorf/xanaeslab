@@ -70,39 +70,53 @@ function getRefreshToken() {
 }
 
 function persistTokensFromResponse(data) {
-  if (!data || typeof data !== 'object') return;
+
+  if (!data || typeof data !== 'object') {
+    return;
+  }
+
   if (data.accessToken || data.refreshToken) {
+   
+    
     saveTokens(data.accessToken || null, data.refreshToken || null);
+  } else {
   }
 }
 
 let refreshPromise = null;
 
 async function requestTokenRefresh() {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        const error = new Error('Sesión expirada. Iniciá sesión nuevamente.');
-        error.status = 401;
-        throw error;
-      }
-
-      const data = await apiFetch('refresh.php', {
-        method: 'POST',
-        body: { refreshToken },
-        skipAuth: true,
-        disableAutoRefresh: true,
-      });
-
-      persistTokensFromResponse(data);
-      return data;
-    })();
-
-    refreshPromise.finally(() => {
-      refreshPromise = null;
-    });
+  
+  // Si ya hay una petición de refresh en curso, la devuelve
+  if (refreshPromise) {
+    return refreshPromise;
   }
+
+  
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken();
+    
+    if (!refreshToken) {
+      const error = new Error('Sesión expirada. Iniciá sesión nuevamente.');
+      error.status = 401;
+      throw error;
+    }
+
+    const data = await apiFetch('refresh.php', {
+      method: 'POST',
+      body: { refreshToken },
+      skipAuth: true,
+      disableAutoRefresh: true,
+    });
+
+    persistTokensFromResponse(data); // Llama a la función de arriba para que la debuguee
+    return data;
+  })();
+
+  // Limpia la promesa cuando termina (ya sea con éxito o error)
+  refreshPromise.finally(() => {
+    refreshPromise = null;
+  });
 
   return refreshPromise;
 }
@@ -119,6 +133,7 @@ function buildUrl(endpoint, params) {
 }
 
 async function apiFetch(endpoint, options = {}) {
+
   const {
     method = 'GET',
     params,
@@ -131,22 +146,29 @@ async function apiFetch(endpoint, options = {}) {
   } = options;
 
   const url = buildUrl(endpoint, params);
+
+ // --- FUNCIÓN INTERNA PARA HACER LA PETICIÓN ---
+const makeRequest = async (requestType = 'Inicial') => {
+
   const initHeaders = {
     Accept: 'application/json',
     ...headers,
   };
 
+  let tokenToUse = null;
   if (!skipAuth) {
-    const token = getAccessToken();
-    if (token) {
-      initHeaders['Authorization'] = `Bearer ${token}`;
+    tokenToUse = getAccessToken();
+    
+    if (tokenToUse) {
+  initHeaders['X-Authorization'] = `Bearer ${tokenToUse}`;
     }
+  } else {
+    console.log(` OMITIENDO autenticación`);
   }
 
   const init = {
     method,
     headers: initHeaders,
-    credentials: 'include',
   };
 
   if (body !== undefined) {
@@ -154,8 +176,14 @@ async function apiFetch(endpoint, options = {}) {
     init.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, init);
+  return fetch(url, init);
+};
+// --- FIN DE LA FUNCIÓN INTERNA ---
 
+  let response = await makeRequest('inicial');
+
+
+  // --- LÓGICA DE REINTENTO ---
   if (
     response.status === 401 &&
     !skipAuth &&
@@ -165,13 +193,15 @@ async function apiFetch(endpoint, options = {}) {
   ) {
     try {
       await requestTokenRefresh();
-      return apiFetch(endpoint, { ...options, _retry: true });
+      response = await makeRequest('reintento');
     } catch (error) {
+      console.error('--- ERROR EN EL REFRESH. LIMPIANDO TOKENS ---');
       clearTokens();
       throw error;
     }
   }
 
+  // --- PROCESAMIENTO DE LA RESPUESTA FINAL ---
   if (raw) {
     if (!response.ok) {
       const text = await response.text();

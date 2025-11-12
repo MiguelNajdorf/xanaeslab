@@ -49,6 +49,12 @@ function current_user(): ?array
     return fetch_user_from_claims($claims);
 }
 
+/**
+ * Verifica el token de la petición, lo valida y devuelve los datos del usuario.
+ * Lanza un error 401 si el token es inválido o el usuario no existe.
+ *
+ * @return array Los datos del usuario autenticado.
+ */
 function require_user_auth(): array
 {
     $token = get_bearer_token();
@@ -59,13 +65,13 @@ function require_user_auth(): array
     try {
         $claims = token_verify($token);
     } catch (Throwable $e) {
-        json_error('UNAUTHENTICATED', 'Debe iniciar sesión.', ['reason' => $e->getMessage()], 401);
-        return [];
+        // En producción, no revelamos el motivo exacto del error por seguridad.
+        json_error('UNAUTHENTICATED', 'Sesión inválida o expirada.', [], 401);
     }
 
     $user = fetch_user_from_claims($claims);
     if (!$user) {
-        json_error('UNAUTHENTICATED', 'Debe iniciar sesión.', [], 401);
+        json_error('UNAUTHENTICATED', 'Usuario no encontrado.', [], 401);
     }
 
     return $user;

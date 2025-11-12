@@ -11,8 +11,7 @@ if (!defined('XANAESLAB_CORS_APPLIED')) {
 
     header('Access-Control-Allow-Origin: ' . $allowedOrigin);
     header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-    header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization');    header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
@@ -171,20 +170,57 @@ function token_verify(string $token): array
     return $payload;
 }
 
+/* function get_bearer_token(): ?string
+{
+    // --- INICIO DE DEBUG ---
+    error_log('--- DEPURACIÓN get_bearer_token() ---');
+    error_log('Contenido de $_SERVER[\'HTTP_AUTHORIZATION\']: ' . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'NULL'));
+    error_log('Contenido de $_SERVER[\'HTTP_X_AUTHORIZATION\']: ' . ($_SERVER['HTTP_X_AUTHORIZATION'] ?? 'NULL'));
+    // --- FIN DE DEBUG ---
+
+    // 1. Intenta con la cabecera estándar primero
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
+    if (is_string($header) && $header !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+            error_log('Token encontrado en cabecera estándar.');
+            return $matches[1];
+        }
+    }
+
+    // 2. Si no funciona, intenta con nuestra cabecera personalizada
+    $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
+    if (is_string($customHeader) && $customHeader !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
+            error_log('Token encontrado en cabecera personalizada X-Authorization.');
+            return $matches[1];
+        }
+    }
+
+    error_log('--- get_bearer_token() DEVOLVIÓ NULL ---');
+    // 3. Si no se encuentra en ninguna parte, devuelve null
+    return null;
+} */
 function get_bearer_token(): ?string
 {
+    // 1. Intenta con la cabecera estándar primero
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
-    if (!is_string($header) || $header === '') {
-        return null;
+    if (is_string($header) && $header !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+            return $matches[1];
+        }
     }
 
-    if (!preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
-        return null;
+    // 2. Si no funciona, intenta con nuestra cabecera personalizada
+    $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
+    if (is_string($customHeader) && $customHeader !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
+            return $matches[1];
+        }
     }
 
-    return $matches[1];
+    // 3. Si no se encuentra en ninguna parte, devuelve null
+    return null;
 }
-
 function json_response(int $status, array $payload): void
 {
     http_response_code($status);

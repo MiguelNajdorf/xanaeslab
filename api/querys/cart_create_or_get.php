@@ -6,7 +6,6 @@ require_once __DIR__ . '/cart_helpers.php';
 
 require_http_method(['POST']);
 
-start_session_if_needed();
 $user = current_user();
 $data = read_json_input();
 $sessionTokenInput = isset($data['session_token']) ? trim((string)$data['session_token']) : null;

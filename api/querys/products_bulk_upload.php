@@ -6,7 +6,10 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../auth.php';
 
 require_http_method(['POST']);
-require_admin();
+$user = require_user_auth();
+if (($user['role'] ?? null) !== 'admin') {
+    json_error('UNAUTHORIZED', 'Acceso no autorizado.', [], 403);
+}
 
 if (empty($_FILES['file']) || !is_uploaded_file($_FILES['file']['tmp_name'])) {
     json_error('VALIDATION_ERROR', 'Archivo CSV requerido (campo file).', [], 422);

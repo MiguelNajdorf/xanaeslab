@@ -6,10 +6,7 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../auth.php';
 
 require_http_method(['POST']);
-$user = require_user_auth();
-if (($user['role'] ?? null) !== 'admin') {
-    json_error('UNAUTHORIZED', 'Acceso no autorizado.', [], 403);
-}
+require_admin();
 
 $data = read_json_input();
 validate_required($data, [
@@ -33,7 +30,12 @@ $pdo = get_pdo();
 $stmt = $pdo->prepare('SELECT COUNT(*) FROM supermarkets WHERE name = :name OR slug = :slug');
 $stmt->execute([':name' => $name, ':slug' => $slug]);
 if ((int)$stmt->fetchColumn() > 0) {
-    json_error('VALIDATION_ERROR', 'El nombre o slug ya existe.', ['name' => 'Duplicado', 'slug' => 'Duplicado'], 422);
+    json_error(
+        'VALIDATION_ERROR',
+        'El nombre o slug ya existe.',
+        ['name' => 'Duplicado', 'slug' => 'Duplicado'],
+        422
+    );
 }
 
 $sql = 'INSERT INTO supermarkets (name, slug, address, city, state, zip, phone, website, is_active, created_at, updated_at) '

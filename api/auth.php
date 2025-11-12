@@ -10,9 +10,10 @@ function start_session_if_needed(): void
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
-            'secure' => false,
+            'domain' => 'anagramdev.com',
+            'secure' => true,
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => 'None',
         ]);
         session_start();
     }

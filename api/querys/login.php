@@ -70,10 +70,8 @@ if ($invalid) {
     json_error('INVALID_CREDENTIALS', 'Credenciales inválidas.', [], 401);
 }
 
-// ---------- Session (solo local, sin cookies cross-site) ----------
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
+// ---------- Session (usando el gestor centralizado) ----------
+start_session_if_needed();
 session_regenerate_id(true);
 
 $_SESSION['uid']  = (int)$user['id'];

@@ -32,7 +32,10 @@ const DB_CHARSET = 'utf8mb4';
 /**
  * Token configuration (shared helpers expect these globals).
  */
-$TOKEN_SECRET = (string)($_ENV['TOKEN_SECRET'] ?? getenv('TOKEN_SECRET') ?? '');
+$TOKEN_SECRET = (string)($_ENV['TOKEN_SECRET'] ?? getenv('TOKEN_SECRET') ?? 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min');
+if ($TOKEN_SECRET === '') {
+    $TOKEN_SECRET = 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min';
+}
 $TOKEN_ISS = 'xanaeslab-api';
 $TOKEN_AUD = 'xanaeslab-client';
 $ACCESS_TTL = 900; // 15 minutes

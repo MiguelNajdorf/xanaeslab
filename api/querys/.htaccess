@@ -1,0 +1,7 @@
+# Forzar las cabeceras de CORS para saltar restricciones del servidor
+<IfModule mod_headers.c>
+    Header always set Access-Control-Allow-Origin "http://xanaeslab.local"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With, X-Authorization"
+    Header always set Vary "Origin"
+</IfModule>

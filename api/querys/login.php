@@ -50,7 +50,7 @@ $password = (string)$data['password'];
 // ---------- DB lookup ----------
 $pdo = get_pdo();
 $stmt = $pdo->prepare(
-    'SELECT id, email, password_hash, role, is_active
+    'SELECT id, email, password_hash, role, is_active, token_version
      FROM users
      WHERE email = :email
      LIMIT 1'
@@ -70,22 +70,60 @@ if ($invalid) {
     json_error('INVALID_CREDENTIALS', 'Credenciales inválidas.', [], 401);
 }
 
-// ---------- Session (solo local, sin cookies cross-site) ----------
-if (session_status() !== PHP_SESSION_ACTIVE) {
-    session_start();
-}
-session_regenerate_id(true);
-
-$_SESSION['uid']  = (int)$user['id'];
-$_SESSION['role'] = (string)$user['role'];
-
 // ---------- Update last login ----------
 $pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id')
     ->execute([':id' => $user['id']]);
 
+// ---------- JWT & Refresh Token ----------
+global $TOKEN_ISS, $TOKEN_AUD, $ACCESS_TTL, $REFRESH_TTL;
+
+$now = time();
+$tokenVersion = (int)($user['token_version'] ?? 0);
+
+$accessPayload = [
+    'iss'  => $TOKEN_ISS,
+    'aud'  => $TOKEN_AUD,
+    'iat'  => $now,
+    'nbf'  => $now,
+    'exp'  => $now + $ACCESS_TTL,
+    'sub'  => (int)$user['id'],
+    'role' => (string)$user['role'],
+    'token_version' => $tokenVersion,
+    'tv'   => $tokenVersion,
+];
+
+$accessToken = token_sign($accessPayload, $ACCESS_TTL);
+
+$refreshToken = bin2hex(random_bytes(32));
+$refreshHash = password_hash($refreshToken, PASSWORD_DEFAULT);
+$expiresAt = date('Y-m-d H:i:s', $now + $REFRESH_TTL);
+
+$userAgent = (string)($_SERVER['HTTP_USER_AGENT'] ?? '');
+$ipAddress = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '');
+if (strpos($ipAddress, ',') !== false) {
+    $parts = array_map('trim', explode(',', $ipAddress));
+    $ipAddress = $parts[0] ?? '';
+}
+
+$insertRefresh = $pdo->prepare(
+    'INSERT INTO refresh_tokens (user_id, token_hash, user_agent, ip_address, expires_at)
+     VALUES (:user_id, :token_hash, :user_agent, :ip_address, :expires_at)'
+);
+$insertRefresh->execute([
+    ':user_id'    => $user['id'],
+    ':token_hash' => $refreshHash,
+    ':user_agent' => substr($userAgent, 0, 255),
+    ':ip_address' => substr($ipAddress, 0, 45),
+    ':expires_at' => $expiresAt,
+]);
+
 // ---------- Response ----------
 json_success([
-    'id'    => (int)$user['id'],
-    'email' => (string)$user['email'],
-    'role'  => (string)$user['role'],
+    'accessToken'  => $accessToken,
+    'refreshToken' => $refreshToken,
+    'user' => [
+        'id'    => (int)$user['id'],
+        'email' => (string)$user['email'],
+        'role'  => (string)$user['role'],
+    ],
 ]);

@@ -6,7 +6,10 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../auth.php';
 
 require_http_method(['DELETE']);
-require_admin();
+$user = require_user_auth();
+if (($user['role'] ?? null) !== 'admin') {
+    json_error('UNAUTHORIZED', 'Acceso no autorizado.', [], 403);
+}
 
 $id = get_query_param('id');
 if ($id === null || !ctype_digit((string)$id)) {

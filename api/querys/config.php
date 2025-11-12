@@ -3,11 +3,42 @@
 
 declare(strict_types=1);
 
+// --------------------------------------------------
+// CORS headers (replicates login.php behaviour)
+// --------------------------------------------------
+if (!defined('XANAESLAB_CORS_APPLIED')) {
+    $allowedOrigin = 'http://xanaeslab.local';
+
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization');    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
+
+    define('XANAESLAB_CORS_APPLIED', true);
+}
+
 const DB_HOST = 'localhost';
 const DB_NAME = 'adev_xanaeslab';
 const DB_USER = 'adev_xanaeslab';
 const DB_PASS = 'YermanFerozo768';
 const DB_CHARSET = 'utf8mb4';
+
+/**
+ * Token configuration (shared helpers expect these globals).
+ */
+$TOKEN_SECRET = (string)($_ENV['TOKEN_SECRET'] ?? getenv('TOKEN_SECRET') ?? 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min');
+if ($TOKEN_SECRET === '') {
+    $TOKEN_SECRET = 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min';
+}
+$TOKEN_ISS = 'xanaeslab-api';
+$TOKEN_AUD = 'xanaeslab-client';
+$ACCESS_TTL = 900; // 15 minutes
+$REFRESH_TTL = 1209600; // 14 days
 
 function get_pdo(): PDO
 {
@@ -28,6 +59,168 @@ function get_pdo(): PDO
     return $pdo;
 }
 
+function b64url_encode(string $data): string
+{
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function b64url_decode(string $data): string
+{
+    $remainder = strlen($data) % 4;
+    if ($remainder > 0) {
+        $data .= str_repeat('=', 4 - $remainder);
+    }
+
+    $decoded = base64_decode(strtr($data, '-_', '+/'), true);
+    if ($decoded === false) {
+        throw new RuntimeException('Base64URL inválido.');
+    }
+
+    return $decoded;
+}
+
+function token_sign(array $claims, ?int $ttl = null): string
+{
+    global $TOKEN_SECRET, $TOKEN_ISS, $TOKEN_AUD, $ACCESS_TTL;
+
+    if ($TOKEN_SECRET === '') {
+        throw new RuntimeException('TOKEN_SECRET no configurado.');
+    }
+
+    $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+
+    $now = time();
+    $ttl = $ttl ?? $ACCESS_TTL;
+    $payload = $claims + [
+        'iss' => $claims['iss'] ?? $TOKEN_ISS,
+        'aud' => $claims['aud'] ?? $TOKEN_AUD,
+        'iat' => $claims['iat'] ?? $now,
+        'nbf' => $claims['nbf'] ?? $now,
+        'exp' => $claims['exp'] ?? ($ttl > 0 ? $now + $ttl : $now),
+    ];
+
+    $segments = [];
+    foreach ([$header, $payload] as $segment) {
+        $json = json_encode($segment, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new RuntimeException('No se pudo codificar el token.');
+        }
+        $segments[] = b64url_encode($json);
+    }
+
+    $signature = hash_hmac('sha256', implode('.', $segments), $TOKEN_SECRET, true);
+    $segments[] = b64url_encode($signature);
+
+    return implode('.', $segments);
+}
+
+function token_verify(string $token): array
+{
+    global $TOKEN_SECRET, $TOKEN_ISS, $TOKEN_AUD;
+
+    if ($TOKEN_SECRET === '') {
+        throw new RuntimeException('TOKEN_SECRET no configurado.');
+    }
+
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) {
+        throw new RuntimeException('Token con formato inválido.');
+    }
+
+    [$encodedHeader, $encodedPayload, $encodedSignature] = $parts;
+
+    $headerJson = b64url_decode($encodedHeader);
+    $payloadJson = b64url_decode($encodedPayload);
+    $signature = b64url_decode($encodedSignature);
+
+    $header = json_decode($headerJson, true);
+    $payload = json_decode($payloadJson, true);
+
+    if (!is_array($header) || !is_array($payload)) {
+        throw new RuntimeException('Token inválido.');
+    }
+
+    if (($header['alg'] ?? '') !== 'HS256') {
+        throw new RuntimeException('Algoritmo no soportado.');
+    }
+
+    $expectedSignature = hash_hmac('sha256', $encodedHeader . '.' . $encodedPayload, $TOKEN_SECRET, true);
+    if (!hash_equals($expectedSignature, $signature)) {
+        throw new RuntimeException('Firma inválida.');
+    }
+
+    $now = time();
+
+    if (($payload['iss'] ?? null) !== $TOKEN_ISS) {
+        throw new RuntimeException('Emisor inválido.');
+    }
+
+    if (($payload['aud'] ?? null) !== $TOKEN_AUD) {
+        throw new RuntimeException('Audiencia inválida.');
+    }
+
+    if (isset($payload['nbf']) && $now < (int)$payload['nbf']) {
+        throw new RuntimeException('Token no vigente.');
+    }
+
+    if (isset($payload['exp']) && $now >= (int)$payload['exp']) {
+        throw new RuntimeException('Token expirado.');
+    }
+
+    return $payload;
+}
+
+/* function get_bearer_token(): ?string
+{
+    // --- INICIO DE DEBUG ---
+    error_log('--- DEPURACIÓN get_bearer_token() ---');
+    error_log('Contenido de $_SERVER[\'HTTP_AUTHORIZATION\']: ' . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'NULL'));
+    error_log('Contenido de $_SERVER[\'HTTP_X_AUTHORIZATION\']: ' . ($_SERVER['HTTP_X_AUTHORIZATION'] ?? 'NULL'));
+    // --- FIN DE DEBUG ---
+
+    // 1. Intenta con la cabecera estándar primero
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
+    if (is_string($header) && $header !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+            error_log('Token encontrado en cabecera estándar.');
+            return $matches[1];
+        }
+    }
+
+    // 2. Si no funciona, intenta con nuestra cabecera personalizada
+    $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
+    if (is_string($customHeader) && $customHeader !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
+            error_log('Token encontrado en cabecera personalizada X-Authorization.');
+            return $matches[1];
+        }
+    }
+
+    error_log('--- get_bearer_token() DEVOLVIÓ NULL ---');
+    // 3. Si no se encuentra en ninguna parte, devuelve null
+    return null;
+} */
+function get_bearer_token(): ?string
+{
+    // 1. Intenta con la cabecera estándar primero
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
+    if (is_string($header) && $header !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+            return $matches[1];
+        }
+    }
+
+    // 2. Si no funciona, intenta con nuestra cabecera personalizada
+    $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
+    if (is_string($customHeader) && $customHeader !== '') {
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
+            return $matches[1];
+        }
+    }
+
+    // 3. Si no se encuentra en ninguna parte, devuelve null
+    return null;
+}
 function json_response(int $status, array $payload): void
 {
     http_response_code($status);

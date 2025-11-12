@@ -88,6 +88,7 @@ $accessPayload = [
     'exp'  => $now + $ACCESS_TTL,
     'sub'  => (int)$user['id'],
     'role' => (string)$user['role'],
+    'token_version' => $tokenVersion,
     'tv'   => $tokenVersion,
 ];
 

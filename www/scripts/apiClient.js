@@ -1,4 +1,37 @@
 const API_BASE = 'https://anagramdev.com/apps/xanaeslab/querys/';
+const SESSION_TOKEN_KEY = 'xanaeslab:adminSessionToken';
+
+let cachedSessionToken;
+
+function loadSessionToken() {
+  if (cachedSessionToken === undefined) {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) {
+        cachedSessionToken = null;
+      } else {
+        cachedSessionToken = window.localStorage.getItem(SESSION_TOKEN_KEY) || null;
+      }
+    } catch (error) {
+      cachedSessionToken = null;
+    }
+  }
+  return cachedSessionToken;
+}
+
+function storeSessionToken(token) {
+  cachedSessionToken = token || null;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (cachedSessionToken) {
+        window.localStorage.setItem(SESSION_TOKEN_KEY, cachedSessionToken);
+      } else {
+        window.localStorage.removeItem(SESSION_TOKEN_KEY);
+      }
+    }
+  } catch (error) {
+    // ignore storage errors (private mode, etc.)
+  }
+}
 
 function buildUrl(endpoint, params) {
   const url = new URL(endpoint, API_BASE);
@@ -21,6 +54,10 @@ async function apiFetch(endpoint, { method = 'GET', params, body, headers = {}, 
     },
     credentials: 'include',
   };
+  const sessionToken = loadSessionToken();
+  if (sessionToken) {
+    init.headers['Authorization'] = `Bearer ${sessionToken}`;
+  }
   if (body !== undefined) {
     init.headers['Content-Type'] = 'application/json';
     init.body = JSON.stringify(body);
@@ -29,6 +66,9 @@ async function apiFetch(endpoint, { method = 'GET', params, body, headers = {}, 
   if (!raw) {
     const data = await response.json().catch(() => null);
     if (!response.ok) {
+      if (response.status === 401) {
+        storeSessionToken(null);
+      }
       const error = new Error(data?.error?.message || 'Error en la solicitud');
       error.status = response.status;
       error.details = data?.error?.details;
@@ -37,6 +77,9 @@ async function apiFetch(endpoint, { method = 'GET', params, body, headers = {}, 
     return data?.data ?? data;
   }
   if (!response.ok) {
+    if (response.status === 401) {
+      storeSessionToken(null);
+    }
     const text = await response.text();
     const error = new Error(text || 'Error en la solicitud');
     error.status = response.status;
@@ -46,11 +89,19 @@ async function apiFetch(endpoint, { method = 'GET', params, body, headers = {}, 
 }
 
 export async function login(email, password) {
-  return apiFetch('login.php', { method: 'POST', body: { email, password } });
+  const data = await apiFetch('login.php', { method: 'POST', body: { email, password } });
+  if (data?.session_token) {
+    storeSessionToken(data.session_token);
+  }
+  return data;
 }
 
 export async function logout() {
-  return apiFetch('logout.php', { method: 'POST' });
+  try {
+    return await apiFetch('logout.php', { method: 'POST' });
+  } finally {
+    storeSessionToken(null);
+  }
 }
 
 export async function currentUser() {

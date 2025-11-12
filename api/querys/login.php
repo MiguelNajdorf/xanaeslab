@@ -77,6 +77,8 @@ session_regenerate_id(true);
 $_SESSION['uid']  = (int)$user['id'];
 $_SESSION['role'] = (string)$user['role'];
 
+$sessionToken = session_id();
+
 // ---------- Update last login ----------
 $pdo->prepare('UPDATE users SET last_login_at = NOW() WHERE id = :id')
     ->execute([':id' => $user['id']]);
@@ -86,4 +88,5 @@ json_success([
     'id'    => (int)$user['id'],
     'email' => (string)$user['email'],
     'role'  => (string)$user['role'],
+    'session_token' => $sessionToken,
 ]);

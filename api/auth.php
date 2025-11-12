@@ -7,16 +7,47 @@ require_once __DIR__ . '/querys/config.php';
 function start_session_if_needed(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => '/',
-            'domain' => 'anagramdev.com',
-            'secure' => true,
-            'httponly' => true,
-            'samesite' => 'None',
-        ]);
+        $sessionId = extract_request_session_id();
+        if ($sessionId !== null) {
+            session_id($sessionId);
+        }
         session_start();
     }
+}
+
+function extract_request_session_id(): ?string
+{
+    $candidates = [];
+
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (stripos($authHeader, 'Bearer ') === 0) {
+        $candidates[] = trim(substr($authHeader, 7));
+    }
+
+    if (!empty($_SERVER['HTTP_X_SESSION_ID'])) {
+        $candidates[] = (string)$_SERVER['HTTP_X_SESSION_ID'];
+    }
+
+    if (!empty($_GET['session_id'])) {
+        $candidates[] = (string)$_GET['session_id'];
+    }
+
+    if (!empty($_POST['session_id'])) {
+        $candidates[] = (string)$_POST['session_id'];
+    }
+
+    foreach ($candidates as $candidate) {
+        $candidate = trim($candidate);
+        if ($candidate === '') {
+            continue;
+        }
+
+        if (preg_match('/^[a-zA-Z0-9,-]{16,}$/', $candidate) === 1) {
+            return $candidate;
+        }
+    }
+
+    return null;
 }
 
 function current_user(): ?array

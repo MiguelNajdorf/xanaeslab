@@ -3,6 +3,26 @@
 
 declare(strict_types=1);
 
+// --------------------------------------------------
+// CORS headers (replicates login.php behaviour)
+// --------------------------------------------------
+if (!defined('XANAESLAB_CORS_APPLIED')) {
+    $allowedOrigin = 'http://xanaeslab.local';
+
+    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+    header('Access-Control-Allow-Credentials: true');
+    header('Vary: Origin');
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
+
+    define('XANAESLAB_CORS_APPLIED', true);
+}
+
 const DB_HOST = 'localhost';
 const DB_NAME = 'adev_xanaeslab';
 const DB_USER = 'adev_xanaeslab';

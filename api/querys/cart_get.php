@@ -6,7 +6,6 @@ require_once __DIR__ . '/cart_helpers.php';
 
 require_http_method(['GET']);
 
-start_session_if_needed();
 $user = current_user();
 
 $cartIdParam = get_query_param('cart_id');

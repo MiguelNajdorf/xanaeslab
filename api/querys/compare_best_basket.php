@@ -8,7 +8,6 @@ require_http_method(['GET', 'POST']);
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-start_session_if_needed();
 $user = current_user();
 
 if ($method === 'GET') {

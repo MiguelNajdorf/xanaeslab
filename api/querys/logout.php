@@ -7,13 +7,47 @@ require_once __DIR__ . '/../auth.php';
 
 require_http_method(['POST']);
 
-start_session_if_needed();
-$_SESSION = [];
-if (ini_get('session.use_cookies')) {
-    $params = session_get_cookie_params();
-    setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'] ?? '', $params['secure'], $params['httponly']);
-}
-session_destroy();
+$data = read_json_input();
 
-json_success(['message' => 'Sesión finalizada.']);
+$refreshToken = null;
+if (array_key_exists('refreshToken', $data)) {
+    $tokenValue = $data['refreshToken'];
+    if (is_string($tokenValue)) {
+        $tokenValue = trim($tokenValue);
+    }
+
+    if (is_string($tokenValue) && $tokenValue !== '') {
+        $refreshToken = $tokenValue;
+    }
+}
+
+if ($refreshToken !== null) {
+    $pdo = get_pdo();
+
+    $stmt = $pdo->prepare(
+        'SELECT id, token_hash
+         FROM refresh_tokens
+         WHERE revoked_at IS NULL'
+    );
+    $stmt->execute();
+
+    $matchedId = null;
+    while ($row = $stmt->fetch()) {
+        if (password_verify($refreshToken, (string)$row['token_hash'])) {
+            $matchedId = (int)$row['id'];
+            break;
+        }
+    }
+
+    if ($matchedId !== null) {
+        $update = $pdo->prepare(
+            'UPDATE refresh_tokens
+             SET revoked_at = NOW()
+             WHERE id = :id AND revoked_at IS NULL'
+        );
+        $update->execute([':id' => $matchedId]);
+    }
+}
+
+json_success(['message' => 'ok']);
 

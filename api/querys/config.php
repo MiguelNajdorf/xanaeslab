@@ -29,6 +29,15 @@ const DB_USER = 'adev_xanaeslab';
 const DB_PASS = 'YermanFerozo768';
 const DB_CHARSET = 'utf8mb4';
 
+/**
+ * Token configuration (shared helpers expect these globals).
+ */
+$TOKEN_SECRET = (string)($_ENV['TOKEN_SECRET'] ?? getenv('TOKEN_SECRET') ?? '');
+$TOKEN_ISS = 'xanaeslab-api';
+$TOKEN_AUD = 'xanaeslab-client';
+$ACCESS_TTL = 900; // 15 minutes
+$REFRESH_TTL = 1209600; // 14 days
+
 function get_pdo(): PDO
 {
     static $pdo = null;
@@ -46,6 +55,131 @@ function get_pdo(): PDO
     $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
     $pdo->exec("SET time_zone = '+00:00'");
     return $pdo;
+}
+
+function b64url_encode(string $data): string
+{
+    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+}
+
+function b64url_decode(string $data): string
+{
+    $remainder = strlen($data) % 4;
+    if ($remainder > 0) {
+        $data .= str_repeat('=', 4 - $remainder);
+    }
+
+    $decoded = base64_decode(strtr($data, '-_', '+/'), true);
+    if ($decoded === false) {
+        throw new RuntimeException('Base64URL inválido.');
+    }
+
+    return $decoded;
+}
+
+function token_sign(array $claims, ?int $ttl = null): string
+{
+    global $TOKEN_SECRET, $TOKEN_ISS, $TOKEN_AUD, $ACCESS_TTL;
+
+    if ($TOKEN_SECRET === '') {
+        throw new RuntimeException('TOKEN_SECRET no configurado.');
+    }
+
+    $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+
+    $now = time();
+    $ttl = $ttl ?? $ACCESS_TTL;
+    $payload = $claims + [
+        'iss' => $claims['iss'] ?? $TOKEN_ISS,
+        'aud' => $claims['aud'] ?? $TOKEN_AUD,
+        'iat' => $claims['iat'] ?? $now,
+        'nbf' => $claims['nbf'] ?? $now,
+        'exp' => $claims['exp'] ?? ($ttl > 0 ? $now + $ttl : $now),
+    ];
+
+    $segments = [];
+    foreach ([$header, $payload] as $segment) {
+        $json = json_encode($segment, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            throw new RuntimeException('No se pudo codificar el token.');
+        }
+        $segments[] = b64url_encode($json);
+    }
+
+    $signature = hash_hmac('sha256', implode('.', $segments), $TOKEN_SECRET, true);
+    $segments[] = b64url_encode($signature);
+
+    return implode('.', $segments);
+}
+
+function token_verify(string $token): array
+{
+    global $TOKEN_SECRET, $TOKEN_ISS, $TOKEN_AUD;
+
+    if ($TOKEN_SECRET === '') {
+        throw new RuntimeException('TOKEN_SECRET no configurado.');
+    }
+
+    $parts = explode('.', $token);
+    if (count($parts) !== 3) {
+        throw new RuntimeException('Token con formato inválido.');
+    }
+
+    [$encodedHeader, $encodedPayload, $encodedSignature] = $parts;
+
+    $headerJson = b64url_decode($encodedHeader);
+    $payloadJson = b64url_decode($encodedPayload);
+    $signature = b64url_decode($encodedSignature);
+
+    $header = json_decode($headerJson, true);
+    $payload = json_decode($payloadJson, true);
+
+    if (!is_array($header) || !is_array($payload)) {
+        throw new RuntimeException('Token inválido.');
+    }
+
+    if (($header['alg'] ?? '') !== 'HS256') {
+        throw new RuntimeException('Algoritmo no soportado.');
+    }
+
+    $expectedSignature = hash_hmac('sha256', $encodedHeader . '.' . $encodedPayload, $TOKEN_SECRET, true);
+    if (!hash_equals($expectedSignature, $signature)) {
+        throw new RuntimeException('Firma inválida.');
+    }
+
+    $now = time();
+
+    if (($payload['iss'] ?? null) !== $TOKEN_ISS) {
+        throw new RuntimeException('Emisor inválido.');
+    }
+
+    if (($payload['aud'] ?? null) !== $TOKEN_AUD) {
+        throw new RuntimeException('Audiencia inválida.');
+    }
+
+    if (isset($payload['nbf']) && $now < (int)$payload['nbf']) {
+        throw new RuntimeException('Token no vigente.');
+    }
+
+    if (isset($payload['exp']) && $now >= (int)$payload['exp']) {
+        throw new RuntimeException('Token expirado.');
+    }
+
+    return $payload;
+}
+
+function get_bearer_token(): ?string
+{
+    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
+    if (!is_string($header) || $header === '') {
+        return null;
+    }
+
+    if (!preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
+        return null;
+    }
+
+    return $matches[1];
 }
 
 function json_response(int $status, array $payload): void

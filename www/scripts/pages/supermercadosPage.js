@@ -1,5 +1,6 @@
 import {
   currentUser,
+  citiesList,
   supermarketsList,
   supermarketCreate,
   supermarketUpdate,
@@ -25,6 +26,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const searchForm = document.getElementById('search-form');
   const resetSearch = document.getElementById('reset-search');
   const form = document.getElementById('super-form');
+  const citySelect = form?.elements['city_id'];
+  const stateInput = form?.elements['state'];
   const formStatus = document.getElementById('super-status');
   const deleteBtn = document.getElementById('delete-super');
   const hoursGrid = document.getElementById('hours-grid');
@@ -49,6 +52,37 @@ document.addEventListener('DOMContentLoaded', async () => {
     disablePage();
     return;
   }
+
+  let cities = [];
+
+  async function loadCities() {
+    try {
+      const response = await citiesList({ limit: 100 });
+      cities = response.items || response.results || [];
+    } catch (error) {
+      console.error('No se pudieron obtener las ciudades', error);
+      cities = [];
+    }
+    if (citySelect) {
+      citySelect.innerHTML = '<option value="">Seleccioná una ciudad</option>';
+      cities.forEach((city) => {
+        const option = document.createElement('option');
+        option.value = city.id;
+        option.textContent = `${city.name} (${city.state})`;
+        citySelect.appendChild(option);
+      });
+    }
+  }
+
+  await loadCities();
+
+  citySelect?.addEventListener('change', () => {
+    if (!citySelect) return;
+    const selected = cities.find(city => String(city.id) === citySelect.value);
+    if (stateInput) {
+      stateInput.value = selected?.state || '';
+    }
+  });
 
   async function loadList(params = {}) {
     tableBody.innerHTML = '<tr><td colspan="6">Cargando…</td></tr>';
@@ -82,13 +116,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function selectSuper(item) {
     selectedSuper = item;
-    const fields = ['id', 'name', 'slug', 'address', 'city', 'state', 'zip', 'phone', 'website'];
+    const fields = ['id', 'name', 'slug', 'address', 'zip', 'phone', 'website'];
     fields.forEach((field) => {
       const input = form.elements[field];
       if (input) {
         input.value = item[field] ?? '';
       }
     });
+    if (citySelect) {
+      citySelect.value = item.city_id ? String(item.city_id) : '';
+    }
+    if (stateInput) {
+      stateInput.value = item.city_state || item.state || '';
+    }
     if (form.elements['is_active']) {
       form.elements['is_active'].value = item.is_active ? '1' : '0';
     }
@@ -106,6 +146,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     form.reset();
     selectedSuper = null;
     formStatus.textContent = '';
+    if (citySelect) citySelect.value = '';
+    if (stateInput) stateInput.value = '';
   }
 
   searchForm?.addEventListener('submit', (event) => {
@@ -124,13 +166,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formData = new FormData(form);
     const payload = Object.fromEntries(formData.entries());
     payload.is_active = payload.is_active === '1';
+    const cityIdValue = payload.city_id;
+    payload.city_id = cityIdValue ? Number(cityIdValue) : null;
+    if (!payload.city_id) {
+      formStatus.textContent = 'Seleccioná una ciudad válida.';
+      formStatus.className = 'status error';
+      return;
+    }
     formStatus.textContent = 'Guardando…';
     formStatus.className = 'status';
     try {
       if (payload.id) {
-        await supermarketUpdate(Number(payload.id), payload);
+        const id = Number(payload.id);
+        delete payload.id;
+        await supermarketUpdate(id, payload);
         formStatus.textContent = 'Supermercado actualizado correctamente.';
       } else {
+        delete payload.id;
         await supermarketCreate(payload);
         formStatus.textContent = 'Supermercado creado.';
       }

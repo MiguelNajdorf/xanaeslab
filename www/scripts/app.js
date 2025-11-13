@@ -1,10 +1,10 @@
-import { ensureSeedData, getSelectedCity, setSelectedCity, getPreferences, purgeVencidas } from './store.js';
+import { ensureSeedData, getSelectedCity, setSelectedCity, getPreferences, purgeVencidas, fetchCities, fetchCategorias } from './store.js';
 import { createComparatorView } from './ui/comparator.js';
 import { createCartView } from './ui/cartView.js';
 import { createSupermarketsView } from './ui/supermarkets.js';
 import { createProductDetailView } from './ui/productDetail.js';
 
-const ciudadesDisponibles = ['Rio Segundo', 'Pilar'];
+let ciudadesDisponibles = [];
 const appRoot = document.getElementById('app');
 const citySelect = document.getElementById('city-select');
 const legalHighlight = document.querySelector('.legal-highlight');
@@ -18,11 +18,22 @@ window.fetch = createRateLimitedFetch(window.fetch.bind(window));
 init();
 
 async function init() {
-  initCitySelect();
   await ensureSeedData();
+  await cargarCiudades();
+  initCitySelect();
   aplicarAjustes();
-  router();
+  await router();
   window.addEventListener('hashchange', router);
+}
+
+async function cargarCiudades() {
+  try {
+    const ciudades = await fetchCities();
+    ciudadesDisponibles = ciudades.map(ciudad => ciudad.nombre);
+  } catch (error) {
+    console.error('No se pudieron cargar las ciudades disponibles', error);
+    ciudadesDisponibles = [];
+  }
 }
 
 function initCitySelect() {
@@ -31,6 +42,15 @@ function initCitySelect() {
   placeholder.value = '';
   placeholder.textContent = 'Seleccioná ciudad';
   citySelect.appendChild(placeholder);
+  if (!ciudadesDisponibles.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No hay ciudades disponibles';
+    citySelect.appendChild(option);
+    citySelect.setAttribute('disabled', 'disabled');
+    return;
+  }
+  citySelect.removeAttribute('disabled');
   ciudadesDisponibles.forEach(ciudad => {
     const option = document.createElement('option');
     option.value = ciudad;
@@ -53,6 +73,9 @@ function initCitySelect() {
       ciudadInicial = porDefecto;
     }
   }
+  if (!ciudadInicial && ciudadesDisponibles.length) {
+    ciudadInicial = ciudadesDisponibles[0];
+  }
   if (ciudadInicial && ciudadesDisponibles.includes(ciudadInicial)) {
     citySelect.value = ciudadInicial;
     setSelectedCity(ciudadInicial);
@@ -68,22 +91,22 @@ async function router() {
   const hash = window.location.hash.replace('#', '') || '/';
   if (hash.startsWith('/producto/')) {
     const [, , id] = hash.split('/');
-    renderProductoDetalle(ciudad, Number(id));
+    await renderProductoDetalle(ciudad, Number(id));
     return;
   }
   switch (hash) {
     case '/comparador':
-      renderComparador(ciudad);
+      await renderComparador(ciudad);
       break;
     case '/changuito':
-      renderChanguito(ciudad);
+      await renderChanguito(ciudad);
       break;
     case '/supermercados':
-      renderSupermercados(ciudad);
+      await renderSupermercados(ciudad);
       break;
     case '/':
     default:
-      renderHome(ciudad);
+      await renderHome(ciudad);
   }
 }
 
@@ -92,26 +115,57 @@ function renderSeleccionCiudad() {
   const aviso = document.createElement('section');
   aviso.className = 'section-card';
   const texto = document.createElement('p');
-  texto.textContent = 'Seleccioná una ciudad para comenzar a comparar precios.';
+  if (!ciudadesDisponibles.length) {
+    texto.textContent = 'Pronto vamos a habilitar nuevas ciudades. Mientras tanto, podés revisar las funcionalidades del sitio.';
+  } else {
+    texto.textContent = 'Seleccioná una ciudad para comenzar a comparar precios.';
+  }
   aviso.appendChild(texto);
   appRoot.appendChild(aviso);
 }
 
-function renderHome(ciudad) {
+async function renderHome(ciudad) {
   const template = document.getElementById('home-template');
   const clone = template.content.cloneNode(true);
   const legal = clone.querySelector('.legal-highlight');
   legal.textContent = obtenerLeyendaLegal();
-  clone.querySelectorAll('.category-pill').forEach(button => {
-    button.addEventListener('click', () => {
-      window.location.hash = '#/comparador';
-    });
-  });
+  const categoriesGrid = clone.querySelector('.categories-grid');
+  if (categoriesGrid) {
+    categoriesGrid.innerHTML = '<p class="muted">Cargando categorías…</p>';
+  }
   appRoot.textContent = '';
   appRoot.appendChild(clone);
+  if (!categoriesGrid) return;
+  try {
+    const categorias = await fetchCategorias();
+    categoriesGrid.textContent = '';
+    if (!categorias.length) {
+      const empty = document.createElement('p');
+      empty.className = 'muted';
+      empty.textContent = 'Todavía no hay categorías cargadas.';
+      categoriesGrid.appendChild(empty);
+      return;
+    }
+    categorias.slice(0, 6).forEach((categoria) => {
+      const button = document.createElement('button');
+      button.className = 'category-pill';
+      button.dataset.category = categoria.slug || categoria.nombre;
+      button.textContent = categoria.nombre || 'Categoría';
+      if (categoria.descripcion) {
+        button.title = categoria.descripcion;
+      }
+      button.addEventListener('click', () => {
+        window.location.hash = '#/comparador';
+      });
+      categoriesGrid.appendChild(button);
+    });
+  } catch (error) {
+    console.error('No se pudieron cargar las categorías destacadas', error);
+    categoriesGrid.innerHTML = '<p class="muted">No pudimos cargar las categorías. Intentá nuevamente más tarde.</p>';
+  }
 }
 
-function renderComparador(ciudad) {
+async function renderComparador(ciudad) {
   appRoot.textContent = '';
   purgeVencidas();
   const view = createComparatorView({ ciudad, onOpenProducto: (id) => {
@@ -120,19 +174,19 @@ function renderComparador(ciudad) {
   appRoot.appendChild(view);
 }
 
-function renderChanguito(ciudad) {
+async function renderChanguito(ciudad) {
   appRoot.textContent = '';
   const view = createCartView({ ciudad });
   appRoot.appendChild(view);
 }
 
-function renderSupermercados(ciudad) {
+async function renderSupermercados(ciudad) {
   appRoot.textContent = '';
   const view = createSupermarketsView({ ciudad });
   appRoot.appendChild(view);
 }
 
-function renderProductoDetalle(ciudad, productoId) {
+async function renderProductoDetalle(ciudad, productoId) {
   appRoot.textContent = '';
   const view = createProductDetailView({ ciudad, productoId, onBack: () => {
     window.location.hash = '#/comparador';

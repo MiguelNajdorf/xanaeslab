@@ -1,4 +1,4 @@
-import { fetchSupermercados } from '../store.js';
+import { fetchSupermercados, fetchSupermarketsFromApi } from '../store.js';
 
 export function createSupermarketsView({ ciudad }) {
   const container = document.createElement('section');
@@ -13,7 +13,10 @@ export function createSupermarketsView({ ciudad }) {
 
   async function render() {
     list.textContent = '';
-    const supermercados = await fetchSupermercados(ciudad);
+    let supermercados = await fetchSupermarketsFromApi(ciudad);
+    if (!supermercados.length) {
+      supermercados = await fetchSupermercados(ciudad);
+    }
     if (!supermercados.length) {
       const empty = document.createElement('p');
       empty.textContent = 'Aún no hay supermercados cargados para esta ciudad.';

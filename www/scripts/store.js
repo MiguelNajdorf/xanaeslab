@@ -1,5 +1,5 @@
 import { parseNumber, parseDate, formatPresentation, promoMinimumQuantity } from './format.js';
-import { citiesList, supermarketsList } from './apiClient.js';
+import { citiesList, supermarketsList, categoriesList, productsList } from './apiClient.js';
 
 const DB_NAME = 'xanaeslab';
 const DB_VERSION = 1;
@@ -17,6 +17,8 @@ const caches = {
   ciudades: new Map(),
   ciudadesPorNombre: new Map(),
   ciudadesPorSlug: new Map(),
+  categorias: new Map(),
+  categoriasPorSlug: new Map(),
 };
 
 let dbPromise;
@@ -70,6 +72,31 @@ function normalizarCiudad(item) {
   };
 }
 
+function normalizarCategoria(item) {
+  return {
+    id: Number(item.id),
+    nombre: item.name || '',
+    slug: item.slug || '',
+    descripcion: item.description || '',
+  };
+}
+
+function normalizarProducto(item) {
+  return {
+    id: Number(item.id),
+    nombre: item.name || '',
+    marca: item.brand || '',
+    codigo: item.barcode || '',
+    unidad: item.unit || '',
+    presentacion: item.size || '',
+    categoria_id: item.category_id !== null && item.category_id !== undefined ? Number(item.category_id) : null,
+    categoria: item.category_name || '',
+    categoria_slug: item.category_slug || '',
+    creado: item.created_at,
+    actualizado: item.updated_at,
+  };
+}
+
 export async function fetchCities({ force = false } = {}) {
   if (!force && caches.ciudades.size) {
     return Array.from(caches.ciudades.values());
@@ -96,6 +123,34 @@ export async function fetchCities({ force = false } = {}) {
 export function getCityByName(nombre) {
   if (!nombre) return null;
   return caches.ciudadesPorNombre.get(nombre) || null;
+}
+
+export async function fetchCategorias({ force = false } = {}) {
+  if (!force && caches.categorias.size) {
+    return Array.from(caches.categorias.values());
+  }
+  try {
+    const response = await categoriesList({ limit: 200 });
+    const items = response.items || response.results || [];
+    caches.categorias.clear();
+    caches.categoriasPorSlug.clear();
+    items.forEach((item) => {
+      const categoria = normalizarCategoria(item);
+      caches.categorias.set(categoria.id, categoria);
+      if (categoria.slug) {
+        caches.categoriasPorSlug.set(categoria.slug, categoria);
+      }
+    });
+    return Array.from(caches.categorias.values());
+  } catch (error) {
+    console.error('No se pudieron cargar las categorías', error);
+    return Array.from(caches.categorias.values());
+  }
+}
+
+export function getCategoriaPorSlug(slug) {
+  if (!slug) return null;
+  return caches.categoriasPorSlug.get(slug) || null;
 }
 
 function openDatabase() {
@@ -143,6 +198,8 @@ export async function clearCaches() {
   caches.ciudades.clear();
   caches.ciudadesPorNombre.clear();
   caches.ciudadesPorSlug.clear();
+  caches.categorias.clear();
+  caches.categoriasPorSlug.clear();
 }
 
 export async function getAll(storeName) {
@@ -460,12 +517,31 @@ export async function fetchOfertasPorCiudad(ciudad) {
   return todas.filter(oferta => oferta.ciudad === ciudad);
 }
 
-export async function fetchProductos() {
-  if (caches.productos.size) return Array.from(caches.productos.values());
-  const db = await openDatabase();
-  const productos = await getAll('productos_canonicos');
-  for (const p of productos) caches.productos.set(p.id, p);
-  return productos;
+export async function fetchProductos(options = {}) {
+  return fetchProductosRemotos(options);
+}
+
+export async function fetchProductosRemotos({ force = false, filters = {} } = {}) {
+  const hasFilters = Object.keys(filters).length > 0;
+  if (!force && !hasFilters && caches.productos.size) {
+    return Array.from(caches.productos.values());
+  }
+  const params = { limit: 200, ...filters };
+  try {
+    const response = await productsList(params);
+    const items = response.items || response.results || [];
+    const normalizados = items.map(normalizarProducto);
+    if (!hasFilters) {
+      caches.productos.clear();
+      normalizados.forEach((producto) => {
+        caches.productos.set(producto.id, producto);
+      });
+    }
+    return normalizados;
+  } catch (error) {
+    console.error('No se pudieron cargar los productos', error);
+    return hasFilters ? [] : Array.from(caches.productos.values());
+  }
 }
 
 function normalizarSupermercadoApi(item, ciudadInfo) {
@@ -491,12 +567,12 @@ function normalizarSupermercadoApi(item, ciudadInfo) {
   };
 }
 
-export async function fetchSupermarketsFromApi(ciudad) {
+export async function fetchSupermarketsFromApi(ciudad, { force = false } = {}) {
   if (!ciudad) return [];
   const ciudades = await fetchCities();
-  const ciudadInfo = ciudades.find(c => c.nombre === ciudad);
+  const ciudadInfo = ciudades.find(c => c.nombre === ciudad || c.slug === ciudad || String(c.id) === String(ciudad));
   if (!ciudadInfo) return [];
-  if (caches.supermercadosRemotos.has(ciudadInfo.id)) {
+  if (!force && caches.supermercadosRemotos.has(ciudadInfo.id)) {
     return caches.supermercadosRemotos.get(ciudadInfo.id);
   }
   try {
@@ -507,17 +583,23 @@ export async function fetchSupermarketsFromApi(ciudad) {
     return normalizados;
   } catch (error) {
     console.error('No se pudieron obtener supermercados del backend', error);
-    return [];
+    throw error;
   }
 }
 
-export async function fetchSupermercados(ciudad) {
-  if (caches.supermercados.size) {
-    return Array.from(caches.supermercados.values()).filter(s => ciudad ? s.ciudad === ciudad : true);
+export async function fetchSupermercados(ciudad, { force = false } = {}) {
+  try {
+    const remotos = await fetchSupermarketsFromApi(ciudad, { force });
+    return remotos;
+  } catch (error) {
+    // fallback a datos locales solo si hay información previa del importador
+  }
+  if (caches.supermercados.size && !force) {
+    return Array.from(caches.supermercados.values()).filter(s => (ciudad ? s.ciudad === ciudad : true));
   }
   const data = await getAll('supermercados');
   data.forEach(s => caches.supermercados.set(s.id, s));
-  return data.filter(s => ciudad ? s.ciudad === ciudad : true);
+  return data.filter(s => (ciudad ? s.ciudad === ciudad : true));
 }
 
 export async function registrarImportacion(resumen) {
@@ -563,18 +645,12 @@ export function parseCSV(texto) {
 }
 
 export async function ensureSeedData() {
-  const ofertas = await getAll('ofertas');
-  if (ofertas.length) {
-    caches.ofertas = ofertas;
-    return;
-  }
   try {
-    const response = await fetch('./data/sample.csv');
-    const csv = await response.text();
-    const filas = parseCSV(csv);
-    await importarFilas(filas);
+    await openDatabase();
+    const ofertas = await getAll('ofertas');
+    caches.ofertas = ofertas;
   } catch (error) {
-    console.warn('No se pudo importar muestra inicial', error);
+    console.warn('No se pudo inicializar el almacenamiento local', error);
   }
 }
 

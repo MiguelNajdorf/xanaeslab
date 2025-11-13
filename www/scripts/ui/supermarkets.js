@@ -1,4 +1,4 @@
-import { fetchSupermercados } from '../store.js';
+import { fetchSupermercados, fetchSupermarketsFromApi } from '../store.js';
 
 export function createSupermarketsView({ ciudad }) {
   const container = document.createElement('section');
@@ -13,7 +13,10 @@ export function createSupermarketsView({ ciudad }) {
 
   async function render() {
     list.textContent = '';
-    const supermercados = await fetchSupermercados(ciudad);
+    let supermercados = await fetchSupermarketsFromApi(ciudad);
+    if (!supermercados.length) {
+      supermercados = await fetchSupermercados(ciudad);
+    }
     if (!supermercados.length) {
       const empty = document.createElement('p');
       empty.textContent = 'Aún no hay supermercados cargados para esta ciudad.';
@@ -28,21 +31,26 @@ export function createSupermarketsView({ ciudad }) {
   function renderCard(supermercado) {
     const card = document.createElement('article');
     card.className = 'map-card';
+    const nombre = supermercado.nombre || supermercado.name || 'Supermercado';
+    const direccion = supermercado.direccion || supermercado.address || '';
+    const horarios = supermercado.horarios || supermercado.schedule || '';
+    const ciudadActual = supermercado.ciudad || ciudad;
     const name = document.createElement('h3');
-    name.textContent = supermercado.nombre;
+    name.textContent = nombre;
     const address = document.createElement('p');
-    address.textContent = supermercado.direccion || 'Dirección pendiente';
+    address.textContent = direccion || 'Dirección pendiente';
     const hours = document.createElement('p');
-    hours.textContent = supermercado.horarios || '';
+    hours.textContent = horarios || '';
     const button = document.createElement('button');
     button.className = 'button';
     button.type = 'button';
     button.textContent = 'Abrir en Maps';
     button.addEventListener('click', () => {
-      window.open(supermercado.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(supermercado.nombre + ' ' + (supermercado.direccion || ciudad))}`, '_blank');
+      const query = `${nombre} ${direccion || ciudadActual}`.trim();
+      window.open(supermercado.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
     });
     card.append(name, address);
-    if (supermercado.horarios) card.appendChild(hours);
+    if (horarios) card.appendChild(hours);
     card.appendChild(button);
     return card;
   }

@@ -31,8 +31,20 @@ CREATE TABLE refresh_tokens (
 ) ENGINE=InnoDB;
 
 -- Supermercados
+CREATE TABLE cities (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(191) NOT NULL,
+    slug VARCHAR(191) NOT NULL,
+    state VARCHAR(120) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_cities_slug (slug),
+    UNIQUE KEY uq_cities_name_state (name, state)
+) ENGINE=InnoDB;
+
 CREATE TABLE supermarkets (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    city_id INT UNSIGNED NOT NULL,
     name VARCHAR(191) NOT NULL,
     slug VARCHAR(191) NOT NULL,
     address VARCHAR(255) NOT NULL,
@@ -45,7 +57,10 @@ CREATE TABLE supermarkets (
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY uq_supermarkets_name (name),
-    UNIQUE KEY uq_supermarkets_slug (slug)
+    UNIQUE KEY uq_supermarkets_slug (slug),
+    KEY idx_supermarkets_city_id (city_id),
+    CONSTRAINT fk_supermarkets_city FOREIGN KEY (city_id) REFERENCES cities(id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 -- Horarios de atención
@@ -165,11 +180,17 @@ INSERT INTO categories (name, slug, description) VALUES
 ('Almacén', 'almacen', 'Productos de almacén'),
 ('Frutas y Verduras', 'frutas-verduras', 'Productos frescos');
 
-INSERT INTO supermarkets (name, slug, address, city, state, zip, phone, website, is_active)
+INSERT INTO cities (name, slug, state) VALUES
+('Córdoba', 'cordoba', 'Córdoba'),
+('Rio Segundo', 'rio-segundo', 'Córdoba'),
+('Pilar', 'pilar', 'Córdoba'),
+('Villa Carlos Paz', 'villa-carlos-paz', 'Córdoba');
+
+INSERT INTO supermarkets (city_id, name, slug, address, city, state, zip, phone, website, is_active)
 VALUES
-('Mercado Centro', 'mercado-centro', 'Av. Siempre Viva 742', 'Córdoba', 'Córdoba', '5000', '+54 351 1234567', 'https://mercadocentro.example', 1),
-('Super Ahorro', 'super-ahorro', 'Calle Principal 123', 'Córdoba', 'Córdoba', '5000', '+54 351 7654321', 'https://superahorro.example', 1),
-('Eco Market', 'eco-market', 'Boulevard Verde 456', 'Villa Carlos Paz', 'Córdoba', '5152', '+54 3541 112233', 'https://ecomarket.example', 1);
+(1, 'Mercado Centro', 'mercado-centro', 'Av. Siempre Viva 742', 'Córdoba', 'Córdoba', '5000', '+54 351 1234567', 'https://mercadocentro.example', 1),
+(1, 'Super Ahorro', 'super-ahorro', 'Calle Principal 123', 'Córdoba', 'Córdoba', '5000', '+54 351 7654321', 'https://superahorro.example', 1),
+(4, 'Eco Market', 'eco-market', 'Boulevard Verde 456', 'Villa Carlos Paz', 'Córdoba', '5152', '+54 3541 112233', 'https://ecomarket.example', 1);
 
 INSERT INTO store_hours (supermarket_id, weekday, open_time, close_time)
 VALUES

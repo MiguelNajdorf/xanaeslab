@@ -1,4 +1,5 @@
 import { parseNumber, parseDate, formatPresentation, promoMinimumQuantity } from './format.js';
+import { citiesList, supermarketsList } from './apiClient.js';
 
 const DB_NAME = 'xanaeslab';
 const DB_VERSION = 1;
@@ -8,10 +9,14 @@ const PREFERENCES_KEY = 'xanaeslab:prefs';
 
 const caches = {
   supermercados: new Map(),
+  supermercadosRemotos: new Map(),
   productos: new Map(),
   ofertas: [],
   importaciones: [],
   ajustes: new Map(),
+  ciudades: new Map(),
+  ciudadesPorNombre: new Map(),
+  ciudadesPorSlug: new Map(),
 };
 
 let dbPromise;
@@ -54,6 +59,45 @@ export function setPreference(key, value) {
   window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify(prefs));
 }
 
+function normalizarCiudad(item) {
+  return {
+    id: Number(item.id),
+    nombre: item.name,
+    slug: item.slug,
+    provincia: item.state,
+    creado: item.created_at,
+    actualizado: item.updated_at,
+  };
+}
+
+export async function fetchCities({ force = false } = {}) {
+  if (!force && caches.ciudades.size) {
+    return Array.from(caches.ciudades.values());
+  }
+  try {
+    const response = await citiesList({ limit: 100 });
+    const items = response.items || response.results || [];
+    caches.ciudades.clear();
+    caches.ciudadesPorNombre.clear();
+    caches.ciudadesPorSlug.clear();
+    items.forEach((item) => {
+      const ciudad = normalizarCiudad(item);
+      caches.ciudades.set(ciudad.id, ciudad);
+      caches.ciudadesPorNombre.set(ciudad.nombre, ciudad);
+      caches.ciudadesPorSlug.set(ciudad.slug, ciudad);
+    });
+    return Array.from(caches.ciudades.values());
+  } catch (error) {
+    console.error('No se pudieron cargar las ciudades', error);
+    return Array.from(caches.ciudades.values());
+  }
+}
+
+export function getCityByName(nombre) {
+  if (!nombre) return null;
+  return caches.ciudadesPorNombre.get(nombre) || null;
+}
+
 function openDatabase() {
   if (!dbPromise) {
     dbPromise = new Promise((resolve, reject) => {
@@ -91,10 +135,14 @@ function openDatabase() {
 
 export async function clearCaches() {
   caches.supermercados.clear();
+  caches.supermercadosRemotos.clear();
   caches.productos.clear();
   caches.ofertas = [];
   caches.importaciones = [];
   caches.ajustes.clear();
+  caches.ciudades.clear();
+  caches.ciudadesPorNombre.clear();
+  caches.ciudadesPorSlug.clear();
 }
 
 export async function getAll(storeName) {
@@ -252,7 +300,7 @@ function calcularPrecioBaseEfectivo(oferta) {
   return oferta.precio_efectivo / oferta.cantidad_base_normalizada;
 }
 
-function evaluarFilaBase(fila) {
+function evaluarFilaBase(fila, ciudadesValidas) {
   const errors = [];
   const supermercado = fila.supermercado?.trim();
   const ciudad = fila.ciudad?.trim();
@@ -260,7 +308,7 @@ function evaluarFilaBase(fila) {
   const marca = fila.marca?.trim();
   const presentacion = formatPresentation(fila.presentacion);
   if (!supermercado) errors.push('Supermercado requerido');
-  if (!ciudad || !['Rio Segundo', 'Pilar'].includes(ciudad)) errors.push('Ciudad inválida');
+  if (!ciudad || (ciudadesValidas?.size && !ciudadesValidas.has(ciudad))) errors.push('Ciudad inválida');
   if (!producto) errors.push('Producto requerido');
   if (!marca) errors.push('Marca requerida');
   if (!presentacion) errors.push('Presentación requerida');
@@ -315,11 +363,14 @@ export async function importarFilas(filas, onProgress = () => {}) {
   const resultados = [];
   let ok = 0; let dup = 0; let err = 0;
 
+  const ciudadesDisponibles = await fetchCities().catch(() => []);
+  const ciudadesValidas = new Set((ciudadesDisponibles || []).map(ciudad => ciudad.nombre));
+
   const ofertasExistentes = await getAll('ofertas');
   const dedupeKey = new Set(ofertasExistentes.map(o => `${o.supermercado}|${o.ciudad}|${o.producto}|${o.marca}|${o.presentacion}|${o.vigencia_desde}|${o.vigencia_hasta}`));
 
   for (let i = 0; i < filas.length; i++) {
-    const base = evaluarFilaBase(filas[i]);
+    const base = evaluarFilaBase(filas[i], ciudadesValidas);
     if (base.errors.length) {
       resultados.push({ status: 'error', fila: filas[i], errores: base.errors });
       err++;
@@ -415,6 +466,49 @@ export async function fetchProductos() {
   const productos = await getAll('productos_canonicos');
   for (const p of productos) caches.productos.set(p.id, p);
   return productos;
+}
+
+function normalizarSupermercadoApi(item, ciudadInfo) {
+  const ciudad = ciudadInfo || getCityByName(item.city ?? item.city_name ?? '');
+  return {
+    id: Number(item.id),
+    nombre: item.name || item.nombre || '',
+    slug: item.slug || '',
+    ciudad: item.city ?? item.city_name ?? ciudad?.nombre ?? '',
+    ciudad_id: Number(item.city_id ?? ciudad?.id ?? 0) || null,
+    ciudad_slug: item.city_slug ?? ciudad?.slug ?? '',
+    provincia: item.city_state ?? ciudad?.provincia ?? item.state ?? '',
+    direccion: item.address || '',
+    telefono: item.phone || '',
+    website: item.website || '',
+    zip: item.zip || '',
+    activo: Boolean(item.is_active ?? true),
+    horarios: '',
+    maps_url: item.maps_url || item.website || '',
+    origen: 'api',
+    creado: item.created_at,
+    actualizado: item.updated_at,
+  };
+}
+
+export async function fetchSupermarketsFromApi(ciudad) {
+  if (!ciudad) return [];
+  const ciudades = await fetchCities();
+  const ciudadInfo = ciudades.find(c => c.nombre === ciudad);
+  if (!ciudadInfo) return [];
+  if (caches.supermercadosRemotos.has(ciudadInfo.id)) {
+    return caches.supermercadosRemotos.get(ciudadInfo.id);
+  }
+  try {
+    const response = await supermarketsList({ city_id: ciudadInfo.id, is_active: 1, limit: 200 });
+    const items = response.items || response.results || [];
+    const normalizados = items.map(item => normalizarSupermercadoApi(item, ciudadInfo));
+    caches.supermercadosRemotos.set(ciudadInfo.id, normalizados);
+    return normalizados;
+  } catch (error) {
+    console.error('No se pudieron obtener supermercados del backend', error);
+    return [];
+  }
 }
 
 export async function fetchSupermercados(ciudad) {

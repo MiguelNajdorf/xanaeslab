@@ -70,8 +70,12 @@
             <label><span>Nombre</span><input name="name" required /></label>
             <label><span>Slug</span><input name="slug" required /></label>
             <label><span>Dirección</span><input name="address" /></label>
-            <label><span>Ciudad</span><input name="city" /></label>
-            <label><span>Provincia</span><input name="state" /></label>
+            <label><span>Ciudad</span>
+              <select name="city_id" required>
+                <option value="">Seleccioná una ciudad</option>
+              </select>
+            </label>
+            <label><span>Provincia</span><input name="state" readonly /></label>
             <label><span>Código postal</span><input name="zip" /></label>
             <label><span>Teléfono</span><input name="phone" /></label>
             <label><span>Sitio web</span><input name="website" /></label>

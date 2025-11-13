@@ -12,8 +12,9 @@ if ($id === null || !ctype_digit((string)$id)) {
 }
 
 $pdo = get_pdo();
-$stmt = $pdo->prepare('SELECT id, name, slug, address, city, state, zip, phone, website, is_active, created_at, updated_at '
-    . 'FROM supermarkets WHERE id = :id');
+$stmt = $pdo->prepare('SELECT s.id, s.city_id, c.slug AS city_slug, c.name AS city_name, c.state AS city_state, '
+    . 's.name, s.slug, s.address, s.city, s.state, s.zip, s.phone, s.website, s.is_active, s.created_at, s.updated_at '
+    . 'FROM supermarkets s INNER JOIN cities c ON c.id = s.city_id WHERE s.id = :id');
 $stmt->execute([':id' => (int)$id]);
 $supermarket = $stmt->fetch();
 

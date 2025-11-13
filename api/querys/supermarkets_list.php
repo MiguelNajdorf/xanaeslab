@@ -11,49 +11,73 @@ $pdo = get_pdo();
 $params = [];
 $conditions = ['1=1'];
 
+$joins = 'FROM supermarkets s INNER JOIN cities c ON c.id = s.city_id';
+
 $q = trim((string)get_query_param('q', ''));
 if ($q !== '') {
-    $conditions[] = '(name LIKE :q OR city LIKE :q OR state LIKE :q)';
+    $conditions[] = '(s.name LIKE :q OR c.name LIKE :q OR c.state LIKE :q OR s.address LIKE :q)';
     $params[':q'] = '%' . $q . '%';
 }
 
 $isActiveParam = get_query_param('is_active');
 $boolActive = boolval_from_param($isActiveParam);
 if ($boolActive !== null) {
-    $conditions[] = 'is_active = :is_active';
+    $conditions[] = 's.is_active = :is_active';
     $params[':is_active'] = $boolActive ? 1 : 0;
 }
 
 $city = trim((string)get_query_param('city', ''));
 if ($city !== '') {
-    $conditions[] = 'city = :city';
+    $conditions[] = 's.city = :city';
     $params[':city'] = $city;
+}
+
+$cityId = get_query_param('city_id');
+if ($cityId !== null && $cityId !== '') {
+    if (!ctype_digit((string)$cityId)) {
+        json_error('VALIDATION_ERROR', 'city_id inválido.', ['city_id' => 'Debe ser un entero.'], 422);
+    }
+    $conditions[] = 's.city_id = :city_id';
+    $params[':city_id'] = (int)$cityId;
+}
+
+$citySlug = trim((string)get_query_param('city_slug', ''));
+if ($citySlug !== '') {
+    $conditions[] = 'c.slug = :city_slug';
+    $params[':city_slug'] = $citySlug;
 }
 
 $state = trim((string)get_query_param('state', ''));
 if ($state !== '') {
-    $conditions[] = 'state = :state';
+    $conditions[] = 's.state = :state';
     $params[':state'] = $state;
 }
 
 [$limit, $offset, $page] = parse_pagination();
 
-$countSql = 'SELECT COUNT(*) FROM supermarkets WHERE ' . implode(' AND ', $conditions);
+$countSql = 'SELECT COUNT(*) ' . $joins . ' WHERE ' . implode(' AND ', $conditions);
 $stmt = $pdo->prepare($countSql);
 $stmt->execute($params);
 $total = (int)$stmt->fetchColumn();
 
-$order = strtolower((string)get_query_param('order', 'name'));
+$orderRaw = (string)get_query_param('order', 'name');
+$orderDir = strtolower((string)get_query_param('dir', '')) === 'desc' ? 'DESC' : 'ASC';
+if (strlen($orderRaw) > 0 && $orderRaw[0] === '-') {
+    $orderDir = 'DESC';
+    $orderRaw = substr($orderRaw, 1);
+}
+$order = strtolower($orderRaw);
 $allowedOrderColumns = [
-    'name' => 'name',
-    'created_at' => 'created_at',
-    'updated_at' => 'updated_at',
+    'name' => 's.name',
+    'created_at' => 's.created_at',
+    'updated_at' => 's.updated_at',
+    'city' => 'c.name',
 ];
-$orderColumn = $allowedOrderColumns[$order] ?? 'name';
-$orderDir = strtolower((string)get_query_param('dir', 'asc')) === 'desc' ? 'DESC' : 'ASC';
+$orderColumn = $allowedOrderColumns[$order] ?? 's.name';
 
-$sql = 'SELECT id, name, slug, address, city, state, zip, phone, website, is_active, created_at, updated_at '
-    . 'FROM supermarkets WHERE ' . implode(' AND ', $conditions)
+$sql = 'SELECT s.id, s.city_id, c.slug AS city_slug, c.name AS city_name, c.state AS city_state, '
+    . 's.name, s.slug, s.address, s.city, s.state, s.zip, s.phone, s.website, s.is_active, s.created_at, s.updated_at '
+    . $joins . ' WHERE ' . implode(' AND ', $conditions)
     . " ORDER BY $orderColumn $orderDir LIMIT :limit OFFSET :offset";
 
 $stmt = $pdo->prepare($sql);

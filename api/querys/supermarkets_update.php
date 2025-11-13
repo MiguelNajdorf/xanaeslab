@@ -21,8 +21,9 @@ if (!is_array($data) || $data === []) {
 
 $pdo = get_pdo();
 $stmt = $pdo->prepare(
-    'SELECT id, name, slug, address, city, state, zip, phone, website, is_active, created_at, updated_at '
-    . 'FROM supermarkets WHERE id = :id'
+    'SELECT s.id, s.city_id, c.name AS city_name, c.state AS city_state, s.name, s.slug, s.address, s.city, s.state, '
+    . 's.zip, s.phone, s.website, s.is_active, s.created_at, s.updated_at '
+    . 'FROM supermarkets s INNER JOIN cities c ON c.id = s.city_id WHERE s.id = :id'
 );
 $stmt->execute([':id' => $supermarketId]);
 $existing = $stmt->fetch();
@@ -54,7 +55,7 @@ if (array_key_exists('slug', $data)) {
     $fields['slug'] = ':slug';
 }
 
-$optionalStrings = ['address', 'city', 'state', 'zip', 'phone', 'website'];
+$optionalStrings = ['address', 'zip', 'phone', 'website'];
 foreach ($optionalStrings as $field) {
     if (array_key_exists($field, $data)) {
         $value = $data[$field];
@@ -64,6 +65,26 @@ foreach ($optionalStrings as $field) {
         $params[":$field"] = $value === null ? null : trim((string)$value);
         $fields[$field] = ":$field";
     }
+}
+
+if (array_key_exists('city_id', $data)) {
+    $cityIdValue = $data['city_id'];
+    if ($cityIdValue === null || (!is_int($cityIdValue) && !(is_string($cityIdValue) && ctype_digit($cityIdValue)))) {
+        send_validation_error(['city_id' => 'Debe ser un número entero.']);
+    }
+    $cityId = (int)$cityIdValue;
+    $cityStmt = $pdo->prepare('SELECT id, name, state FROM cities WHERE id = :id');
+    $cityStmt->execute([':id' => $cityId]);
+    $cityRow = $cityStmt->fetch();
+    if (!$cityRow) {
+        send_validation_error(['city_id' => 'Ciudad inexistente.']);
+    }
+    $params[':city_id'] = $cityId;
+    $fields['city_id'] = ':city_id';
+    $params[':city'] = $cityRow['name'];
+    $fields['city'] = ':city';
+    $params[':state'] = $cityRow['state'];
+    $fields['state'] = ':state';
 }
 
 if (array_key_exists('is_active', $data)) {
@@ -111,8 +132,9 @@ $updateStmt = $pdo->prepare($sql);
 $updateStmt->execute($params);
 
 $stmt = $pdo->prepare(
-    'SELECT id, name, slug, address, city, state, zip, phone, website, is_active, created_at, updated_at '
-    . 'FROM supermarkets WHERE id = :id'
+    'SELECT s.id, s.city_id, c.slug AS city_slug, c.name AS city_name, c.state AS city_state, '
+    . 's.name, s.slug, s.address, s.city, s.state, s.zip, s.phone, s.website, s.is_active, s.created_at, s.updated_at '
+    . 'FROM supermarkets s INNER JOIN cities c ON c.id = s.city_id WHERE s.id = :id'
 );
 $stmt->execute([':id' => $supermarketId]);
 $supermarket = $stmt->fetch();

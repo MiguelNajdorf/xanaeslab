@@ -264,6 +264,10 @@ export async function currentUser() {
   }
 }
 
+export async function citiesList(filters = {}) {
+  return apiFetch('cities_list.php', { params: filters });
+}
+
 export async function supermarketsList(filters = {}) {
   return apiFetch('supermarkets_list.php', { params: filters });
 }
@@ -277,11 +281,11 @@ export async function supermarketCreate(payload) {
 }
 
 export async function supermarketUpdate(id, payload) {
-  return apiFetch('supermarkets_update.php', { method: 'PATCH', body: { id, ...payload } });
+  return apiFetch('supermarkets_update.php', { method: 'PATCH', params: { id }, body: payload });
 }
 
 export async function supermarketDelete(id, { force = false } = {}) {
-  return apiFetch('supermarkets_delete.php', { method: 'DELETE', body: { id, force } });
+  return apiFetch('supermarkets_delete.php', { method: 'DELETE', params: { id }, body: { force } });
 }
 
 export async function storeHoursSet(supermarket_id, hours) {
@@ -372,6 +376,7 @@ export const apiClient = {
   login,
   logout,
   currentUser,
+  citiesList,
   supermarketsList,
   supermarketGet,
   supermarketCreate,

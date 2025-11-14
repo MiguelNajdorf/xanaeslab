@@ -747,10 +747,42 @@ export async function deleteOfertas(filterFn) {
 }
 
 const PUBLIC_API_BASE = '/api';
+const PUBLIC_QUERY_BASE = 'https://anagramdev.com/apps/xanaeslab/querys';
 
 function buildPublicUrl(path, params = {}) {
-  const base = PUBLIC_API_BASE.endsWith('/') ? PUBLIC_API_BASE.slice(0, -1) : PUBLIC_API_BASE;
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  if (typeof path !== 'string') {
+    throw new TypeError('El path debe ser una cadena');
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    const url = new URL(path);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => {
+          if (entry !== undefined && entry !== null && entry !== '') {
+            url.searchParams.append(key, entry);
+          }
+        });
+      } else {
+        url.searchParams.set(key, value);
+      }
+    });
+    return url.toString();
+  }
+
+  const isQueryEndpoint = path.startsWith('/querys/') || path.startsWith('querys/');
+  const baseSource = isQueryEndpoint ? PUBLIC_QUERY_BASE : PUBLIC_API_BASE;
+  const base = baseSource.endsWith('/') ? baseSource.slice(0, -1) : baseSource;
+  let cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+  if (isQueryEndpoint) {
+    cleanPath = cleanPath.replace(/^\/?querys/i, '');
+  }
+
+  if (!cleanPath.startsWith('/')) {
+    cleanPath = `/${cleanPath}`;
+  }
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return;

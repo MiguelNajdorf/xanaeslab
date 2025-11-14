@@ -376,7 +376,27 @@ function send_validation_error(array $errors): void
 }
 
 set_exception_handler(function (Throwable $e): void {
-    error_log('API error: ' . $e->getMessage());
-    json_error('INTERNAL_ERROR', 'Ha ocurrido un error inesperado.', [], 500);
+    error_log(sprintf('API error: %s in %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
+
+    $details = [
+        'exception' => [
+            'type' => get_class($e),
+            'message' => $e->getMessage(),
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+        ],
+    ];
+
+    $trace = $e->getTraceAsString();
+    if ($trace !== '') {
+        $details['exception']['trace'] = explode("\n", $trace);
+    }
+
+    json_error(
+        'INTERNAL_ERROR',
+        'Ha ocurrido un error inesperado: ' . $e->getMessage(),
+        $details,
+        500
+    );
 });
 

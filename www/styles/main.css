@@ -104,7 +104,8 @@ body {
   outline: 2px solid transparent;
 }
 
-.main-nav .nav-link.active {
+.main-nav .nav-link.active,
+.main-nav .nav-link.is-active {
   background: rgba(255, 255, 255, 0.28);
 }
 
@@ -499,4 +500,131 @@ body {
 :focus-visible {
   outline: 3px solid rgba(255, 92, 53, 0.5);
   outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.supermarkets-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.supermarket-row {
+  margin: 0;
+}
+
+.supermarket-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: white;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--brand-dark);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.supermarket-button:hover,
+.supermarket-button:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(35, 25, 66, 0.2);
+  outline: 3px solid rgba(255, 92, 53, 0.3);
+}
+
+.supermarket-offers-header {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.offer-card {
+  background: white;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  padding: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.offer-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.offer-price {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--brand-dark);
+  margin: 0;
+}
+
+.offer-status {
+  font-weight: 600;
+  color: var(--brand-primary);
+  margin: 0.25rem 0;
+}
+
+.offer-actions {
+  margin-top: 0.5rem;
+}
+
+.offer-actions .button {
+  width: 100%;
+}
+
+.cart-ranking {
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1rem;
+  background: var(--brand-dark);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 50;
+  opacity: 1;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.toast.is-hidden {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+@media (min-width: 768px) {
+  .supermarket-offers-header {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
 }

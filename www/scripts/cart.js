@@ -1,41 +1,41 @@
 import { getCart, persistCart } from './store.js';
 
-const cart = getCart();
+const shoppingList = getCart();
 
-export function listarChanguito() {
-  return cart.slice();
+export function listarListaDeCompras() {
+  return shoppingList.slice();
 }
 
-export function agregarAlChanguito(item) {
-  const existing = cart.find(entry => entry.producto_id === item.producto_id);
+export function agregarAListaDeCompras(item) {
+  const existing = shoppingList.find(entry => entry.producto_id === item.producto_id);
   if (existing) {
     existing.cantidad += item.cantidad;
   } else {
-    cart.push({ ...item });
+    shoppingList.push({ ...item });
   }
-  persistCart(cart);
+  persistCart(shoppingList);
 }
 
 export function actualizarCantidad(productoId, cantidad) {
-  const entry = cart.find(item => item.producto_id === productoId);
+  const entry = shoppingList.find(item => item.producto_id === productoId);
   if (!entry) return;
   entry.cantidad = Math.max(1, cantidad);
-  persistCart(cart);
+  persistCart(shoppingList);
 }
 
-export function eliminarDelChanguito(productoId) {
-  const idx = cart.findIndex(item => item.producto_id === productoId);
+export function eliminarDeListaDeCompras(productoId) {
+  const idx = shoppingList.findIndex(item => item.producto_id === productoId);
   if (idx >= 0) {
-    cart.splice(idx, 1);
-    persistCart(cart);
+    shoppingList.splice(idx, 1);
+    persistCart(shoppingList);
   }
 }
 
-export function vaciarChanguito() {
-  cart.length = 0;
-  persistCart(cart);
+export function vaciarListaDeCompras() {
+  shoppingList.length = 0;
+  persistCart(shoppingList);
 }
 
 export function totalItems() {
-  return cart.reduce((acc, item) => acc + item.cantidad, 0);
+  return shoppingList.reduce((acc, item) => acc + item.cantidad, 0);
 }

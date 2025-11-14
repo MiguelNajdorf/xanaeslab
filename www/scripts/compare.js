@@ -87,7 +87,7 @@ export function resumenSupermercados(comparacion) {
   }));
 }
 
-export function calcularRankingChanguito(items, ofertasPorCiudad) {
+export function calcularRankingListaDeCompras(items, ofertasPorCiudad) {
   const productosPorId = agruparPorProducto(ofertasPorCiudad);
   const ofertadoPorProducto = new Map();
   for (const grupo of productosPorId) {
@@ -111,7 +111,7 @@ export function calcularRankingChanguito(items, ofertasPorCiudad) {
   return ranking;
 }
 
-export function resumenChanguitoOfertas(ofertas) {
+export function resumenListaDeComprasOfertas(ofertas) {
   return ofertas.map(oferta => ({
     id: oferta.id,
     descripcion: `${oferta.producto} ${oferta.marca}`.trim(),

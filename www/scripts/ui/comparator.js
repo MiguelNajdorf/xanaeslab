@@ -1,7 +1,7 @@
 import { obtenerComparaciones, mapComparacionToCard } from '../compare.js';
 import { formatCurrency } from '../format.js';
 import { getFilterState, updateFilterState, debounce, clearFilters } from '../filters.js';
-import { agregarAlChanguito } from '../cart.js';
+import { agregarAListaDeCompras } from '../cart.js';
 
 export function createComparatorView({ ciudad, onNavigate, onOpenProducto }) {
   const container = document.createElement('section');
@@ -150,10 +150,10 @@ export function createComparatorView({ ciudad, onNavigate, onOpenProducto }) {
     const agregarBtn = document.createElement('button');
     agregarBtn.className = 'button-tertiary';
     agregarBtn.type = 'button';
-    agregarBtn.textContent = 'Agregar al changuito';
+    agregarBtn.textContent = 'Agregar a la lista de compras';
     agregarBtn.addEventListener('click', () => {
       const id = comparacion.producto.producto_id || comparacion.producto.id;
-      agregarAlChanguito({ producto_id: id, cantidad: 1, descripcion: data.titulo });
+      agregarAListaDeCompras({ producto_id: id, cantidad: 1, descripcion: data.titulo });
       const aviso = document.createElement('span');
       aviso.textContent = 'Agregado';
       aviso.setAttribute('role', 'status');

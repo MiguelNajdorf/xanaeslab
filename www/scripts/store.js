@@ -4,7 +4,7 @@ import { citiesList, supermarketsList, categoriesList, productsList } from './ap
 const DB_NAME = 'xanaeslab';
 const DB_VERSION = 1;
 const CITY_KEY = 'xanaeslab:city';
-const CART_KEY = 'xanaeslab:cart';
+const CART_KEY = 'xanaeslab:lista';
 const PREFERENCES_KEY = 'xanaeslab:prefs';
 
 const caches = {
@@ -19,6 +19,11 @@ const caches = {
   ciudadesPorSlug: new Map(),
   categorias: new Map(),
   categoriasPorSlug: new Map(),
+  publicSupermercados: [],
+  publicSupermercadosPorId: new Map(),
+  ofertasPublicasPorSuper: new Map(),
+  ofertasPublicasIndex: new Map(),
+  mejoresPrecios: new Map(),
 };
 
 let dbPromise;
@@ -33,18 +38,33 @@ export function setSelectedCity(city) {
   }
 }
 
+const LEGACY_CART_KEY = 'xanaeslab:cart';
+
 export function getCart() {
   try {
-    const raw = window.localStorage.getItem(CART_KEY);
+    let raw = window.localStorage.getItem(CART_KEY);
+    if (!raw) {
+      const legacy = window.localStorage.getItem(LEGACY_CART_KEY);
+      if (legacy) {
+        window.localStorage.setItem(CART_KEY, legacy);
+        window.localStorage.removeItem(LEGACY_CART_KEY);
+        raw = legacy;
+      }
+    }
     return raw ? JSON.parse(raw) : [];
   } catch (error) {
-    console.error('Error leyendo changuito', error);
+    console.error('Error leyendo lista de compras', error);
     return [];
   }
 }
 
 export function persistCart(items) {
   window.localStorage.setItem(CART_KEY, JSON.stringify(items));
+  try {
+    window.localStorage.removeItem(LEGACY_CART_KEY);
+  } catch (_) {
+    // ignorar
+  }
 }
 
 export function getPreferences() {
@@ -200,6 +220,11 @@ export async function clearCaches() {
   caches.ciudadesPorSlug.clear();
   caches.categorias.clear();
   caches.categoriasPorSlug.clear();
+  caches.publicSupermercados = [];
+  caches.publicSupermercadosPorId.clear();
+  caches.ofertasPublicasPorSuper.clear();
+  caches.ofertasPublicasIndex.clear();
+  caches.mejoresPrecios.clear();
 }
 
 export async function getAll(storeName) {
@@ -655,7 +680,20 @@ export async function ensureSeedData() {
 }
 
 export function purgeVencidas(nowISO = new Date().toISOString()) {
-  caches.ofertas = caches.ofertas.filter(oferta => new Date(oferta.vigencia_hasta) >= new Date(nowISO));
+  const now = new Date(nowISO);
+  caches.ofertas = caches.ofertas.filter(oferta => new Date(oferta.vigencia_hasta) >= now);
+  caches.ofertasPublicasPorSuper.forEach((lista, superId) => {
+    const vigentes = lista.filter(oferta => new Date(oferta.vigencia_hasta) >= now);
+    caches.ofertasPublicasPorSuper.set(superId, vigentes);
+  });
+  caches.ofertasPublicasIndex.forEach((lista, productoId) => {
+    const vigentes = lista.filter(oferta => new Date(oferta.vigencia_hasta) >= now);
+    if (vigentes.length) {
+      caches.ofertasPublicasIndex.set(productoId, vigentes);
+    } else {
+      caches.ofertasPublicasIndex.delete(productoId);
+    }
+  });
   return caches.ofertas;
 }
 
@@ -706,6 +744,318 @@ export async function deleteOfertas(filterFn) {
   });
   caches.ofertas = toKeep;
   return toKeep.length;
+}
+
+const PUBLIC_API_BASE = '/api';
+
+function buildPublicUrl(path, params = {}) {
+  const base = PUBLIC_API_BASE.endsWith('/') ? PUBLIC_API_BASE.slice(0, -1) : PUBLIC_API_BASE;
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const search = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    if (Array.isArray(value)) {
+      value.forEach((entry) => {
+        if (entry !== undefined && entry !== null && entry !== '') {
+          search.append(key, entry);
+        }
+      });
+    } else {
+      search.append(key, value);
+    }
+  });
+  const query = search.toString();
+  return `${base}${cleanPath}${query ? `?${query}` : ''}`;
+}
+
+function normalizarSupermercadoPublico(item) {
+  const id = Number(item?.id ?? item?.supermercado_id ?? item?.supermarket_id ?? 0) || 0;
+  const nombre = item?.nombre ?? item?.name ?? 'Supermercado';
+  const direccion = item?.direccion ?? item?.address ?? '';
+  const ciudadRaw = item?.ciudad ?? item?.city ?? item?.city_name ?? '';
+  const ciudad = normalizarCiudadPublica(ciudadRaw);
+  const activo = item?.activo !== undefined ? Boolean(item.activo) : (item?.is_active !== undefined ? Boolean(item.is_active) : true);
+  return {
+    id,
+    nombre,
+    direccion,
+    ciudad,
+    maps_url: item?.maps_url ?? item?.mapsUrl ?? '',
+    activo,
+  };
+}
+
+function normalizarCiudadPublica(ciudad) {
+  if (!ciudad) return '';
+  const lower = ciudad.toLowerCase();
+  if (lower.includes('rio segundo') || lower.includes('río segundo')) {
+    return 'Río Segundo';
+  }
+  if (lower.includes('pilar')) {
+    return 'Pilar';
+  }
+  return ciudad;
+}
+
+function normalizarFechaPublica(value) {
+  if (!value) return null;
+  const parsed = parseDate(value);
+  if (parsed) return parsed;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function normalizarOfertaPublica(item, supermercadoId) {
+  const productoId = Number(item?.producto_id ?? item?.product_id ?? item?.id_producto ?? 0) || 0;
+  const precioIndividual = parseNumber(item?.precio_individual ?? item?.precio ?? item?.price);
+  const precioBase = parseNumber(item?.precio_por_base ?? item?.precio_base ?? item?.price_base);
+  const precioEfectivo = parseNumber(item?.precio_efectivo ?? item?.precioPromo ?? item?.precio_total);
+  const cantidadBase = parseNumber(item?.cantidad_base ?? item?.cantidadBase);
+  const cantidadNormalizada = parseNumber(item?.cantidad_base_normalizada ?? item?.cantidadNormalizada);
+  const minPromo = parseNumber(item?.min_cantidad_para_promo ?? item?.cantidad_minima ?? item?.cantidadMinima);
+  const ofertaId = item?.oferta_id ?? item?.id ?? `${supermercadoId}-${productoId}`;
+  const presentacion = formatPresentation(item?.presentacion ?? item?.presentacion_corta ?? item?.presentacion_larga ?? item?.size ?? '');
+  const normalized = {
+    id: ofertaId,
+    oferta_id: ofertaId,
+    producto_id: productoId,
+    producto: item?.nombre ?? item?.producto ?? item?.product_name ?? '',
+    marca: item?.marca ?? item?.brand ?? '',
+    presentacion,
+    precio_individual: precioIndividual ?? 0,
+    precio_por_base: precioBase ?? null,
+    precio_efectivo: precioEfectivo ?? null,
+    precio_por_base_efectivo: item?.precio_por_base_efectivo ? parseNumber(item.precio_por_base_efectivo) : null,
+    promo_tipo: item?.promo_tipo ?? 'ninguna',
+    promo_param: parseNumber(item?.promo_param ?? item?.promo_parametro ?? item?.promo_valor),
+    promo_condicion: item?.promo_condicion ?? item?.promo_condicion_texto ?? '',
+    min_cantidad_para_promo: minPromo ?? null,
+    cantidad_base: cantidadBase ?? null,
+    cantidad_base_normalizada: cantidadNormalizada ?? null,
+    unidad_base: item?.unidad_base ?? item?.unidadBase ?? item?.unidad ?? '',
+    vigencia_desde: normalizarFechaPublica(item?.vigencia_desde ?? item?.vigenciaDesde ?? item?.desde),
+    vigencia_hasta: normalizarFechaPublica(item?.vigencia_hasta ?? item?.vigenciaHasta ?? item?.hasta),
+    imagen_url: item?.imagen_url ?? item?.imagen ?? item?.image ?? null,
+    supermercado_id: Number(item?.supermercado_id ?? supermercadoId ?? 0) || 0,
+    supermercado_nombre: item?.supermercado_nombre ?? item?.supermercado ?? '',
+  };
+  if (normalized.min_cantidad_para_promo === null || normalized.min_cantidad_para_promo === undefined) {
+    const calculada = promoMinimumQuantity(normalized);
+    if (calculada) {
+      normalized.min_cantidad_para_promo = calculada;
+    }
+  }
+  return normalized;
+}
+
+function esOfertaVigente(oferta, now = new Date()) {
+  if (!oferta?.vigencia_hasta) return true;
+  const fecha = new Date(oferta.vigencia_hasta);
+  if (Number.isNaN(fecha.getTime())) return true;
+  return fecha >= now;
+}
+
+function almacenarOfertasPublicas(supermercadoId, ofertas) {
+  caches.ofertasPublicasPorSuper.set(supermercadoId, ofertas);
+  caches.ofertasPublicasIndex.forEach((lista, productoId) => {
+    const filtradas = lista.filter(oferta => oferta.supermercado_id !== supermercadoId);
+    if (filtradas.length) {
+      caches.ofertasPublicasIndex.set(productoId, filtradas);
+    } else {
+      caches.ofertasPublicasIndex.delete(productoId);
+    }
+  });
+  ofertas.forEach((oferta) => {
+    if (!oferta?.producto_id) return;
+    const lista = caches.ofertasPublicasIndex.get(oferta.producto_id) || [];
+    lista.push(oferta);
+    caches.ofertasPublicasIndex.set(oferta.producto_id, lista);
+  });
+}
+
+function computeLocalBestPrice(productoId) {
+  const ofertas = caches.ofertasPublicasIndex.get(productoId) || [];
+  const vigentes = ofertas.filter(oferta => esOfertaVigente(oferta));
+  if (!vigentes.length) {
+    return null;
+  }
+  const ordenadas = vigentes.slice().sort((a, b) => {
+    const diff = (a.precio_individual ?? 0) - (b.precio_individual ?? 0);
+    if (Math.abs(diff) > 0.0001) {
+      return diff;
+    }
+    const nombreA = (a.supermercado_nombre || getPublicSupermarketById(a.supermercado_id)?.nombre || '').toLowerCase();
+    const nombreB = (b.supermercado_nombre || getPublicSupermarketById(b.supermercado_id)?.nombre || '').toLowerCase();
+    return nombreA.localeCompare(nombreB, 'es');
+  });
+  const mejor = ordenadas[0];
+  const minPrecio = mejor?.precio_individual ?? 0;
+  const ganadores = ordenadas.filter(oferta => Math.abs((oferta.precio_individual ?? 0) - minPrecio) < 0.0001);
+  const unico = ordenadas.length === 1;
+  const empate = ganadores.length > 1;
+  const mejorSuper = mejor?.supermercado_nombre || getPublicSupermarketById(mejor?.supermercado_id)?.nombre || '';
+  const resultado = {
+    producto_id: productoId,
+    mejor_supermercado: mejorSuper,
+    mejor_precio: minPrecio,
+    empate,
+    unico,
+  };
+  caches.mejoresPrecios.set(productoId, resultado);
+  return resultado;
+}
+
+export async function fetchPublicSupermarkets({ force = false } = {}) {
+  if (!force && caches.publicSupermercados.length) {
+    return caches.publicSupermercados.slice();
+  }
+  try {
+    const response = await fetch(buildPublicUrl('/supermercados'));
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const items = Array.isArray(payload) ? payload : (payload?.items || payload?.results || []);
+    const normalizados = items.map(normalizarSupermercadoPublico).filter(item => item.activo !== false);
+    normalizados.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    caches.publicSupermercados = normalizados;
+    caches.publicSupermercadosPorId = new Map(normalizados.map(item => [item.id, item]));
+    return normalizados.slice();
+  } catch (error) {
+    console.warn('Fallo al obtener supermercados públicos', error);
+  }
+  const fallback = await fetchSupermercados(null, { force });
+  if (Array.isArray(fallback) && fallback.length) {
+    const normalizados = fallback
+      .filter(item => item.activo !== false)
+      .map(item => ({
+        id: Number(item.id),
+        nombre: item.nombre || 'Supermercado',
+        direccion: item.direccion || '',
+        ciudad: normalizarCiudadPublica(item.ciudad || ''),
+        maps_url: item.maps_url || '',
+        activo: item.activo !== false,
+      }));
+    normalizados.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    caches.publicSupermercados = normalizados;
+    caches.publicSupermercadosPorId = new Map(normalizados.map(item => [item.id, item]));
+    return normalizados.slice();
+  }
+  return caches.publicSupermercados.slice();
+}
+
+export function getPublicSupermarketById(id) {
+  if (!id) return null;
+  return caches.publicSupermercadosPorId.get(Number(id)) || null;
+}
+
+export async function fetchOffersForSupermarket(supermercadoId, { force = false } = {}) {
+  const superId = Number(supermercadoId);
+  if (!Number.isFinite(superId) || superId <= 0) {
+    return [];
+  }
+  if (!force && caches.ofertasPublicasPorSuper.has(superId)) {
+    return caches.ofertasPublicasPorSuper.get(superId).slice();
+  }
+  await fetchPublicSupermercados();
+  try {
+    const response = await fetch(buildPublicUrl('/ofertas', { vigentes: 1, supermercado_id: superId }));
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const items = Array.isArray(payload) ? payload : (payload?.items || payload?.results || []);
+    const now = new Date();
+    const normalizados = items
+      .map(item => normalizarOfertaPublica(item, superId))
+      .map(oferta => ({
+        ...oferta,
+        supermercado_nombre: oferta.supermercado_nombre || getPublicSupermarketById(oferta.supermercado_id)?.nombre || '',
+      }))
+      .filter(oferta => esOfertaVigente(oferta, now));
+    almacenarOfertasPublicas(superId, normalizados);
+    normalizados.forEach(oferta => computeLocalBestPrice(oferta.producto_id));
+    return normalizados.slice();
+  } catch (error) {
+    console.warn('Fallo al obtener ofertas por supermercado', error);
+  }
+  if (caches.ofertasPublicasPorSuper.has(superId)) {
+    return caches.ofertasPublicasPorSuper.get(superId).slice();
+  }
+  return [];
+}
+
+async function requestBestPrices(productoIds) {
+  if (!productoIds.length) return new Map();
+  try {
+    const params = new URLSearchParams();
+    productoIds.forEach(id => {
+      params.append('producto_id[]', id);
+    });
+    params.append('vigentes', '1');
+    const queryParams = {};
+    for (const [key, value] of params.entries()) {
+      if (!queryParams[key]) {
+        queryParams[key] = [];
+      }
+      queryParams[key].push(value);
+    }
+    const url = buildPublicUrl('/mejor-precio', queryParams);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const payload = await response.json();
+    const registros = Array.isArray(payload) ? payload : (payload?.items || payload?.results || (payload?.producto_id ? [payload] : []));
+    const map = new Map();
+    registros.forEach((item) => {
+      const productoId = Number(item?.producto_id ?? item?.id ?? 0) || 0;
+      if (!productoId) return;
+      const info = {
+        producto_id: productoId,
+        mejor_supermercado: item?.mejor_supermercado ?? item?.supermercado ?? '',
+        mejor_precio: parseNumber(item?.mejor_precio ?? item?.precio ?? item?.price) ?? null,
+        empate: Boolean(item?.empate),
+        unico: Boolean(item?.unico),
+      };
+      caches.mejoresPrecios.set(productoId, info);
+      map.set(productoId, info);
+    });
+    return map;
+  } catch (error) {
+    console.warn('Fallo al obtener mejores precios globales', error);
+    return new Map();
+  }
+}
+
+export async function fetchBestPrices(productoIds, { force = false } = {}) {
+  const ids = Array.from(new Set(productoIds.map(id => Number(id)).filter(id => Number.isFinite(id) && id > 0)));
+  const resultado = new Map();
+  const pendientes = [];
+  ids.forEach((id) => {
+    if (!force && caches.mejoresPrecios.has(id)) {
+      resultado.set(id, caches.mejoresPrecios.get(id));
+    } else {
+      pendientes.push(id);
+    }
+  });
+  if (pendientes.length) {
+    const remotos = await requestBestPrices(pendientes);
+    pendientes.forEach((id) => {
+      if (remotos.has(id)) {
+        resultado.set(id, remotos.get(id));
+      }
+    });
+  }
+  ids.forEach((id) => {
+    if (!resultado.has(id)) {
+      const local = computeLocalBestPrice(id);
+      if (local) {
+        resultado.set(id, local);
+      }
+    }
+  });
+  return resultado;
 }
 
 export function getCaches() {

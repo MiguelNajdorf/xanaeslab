@@ -13,18 +13,12 @@
   <header class="site-header">
     <div class="brand">
       <span class="brand-badge">Xanaes Lab</span>
-      <p class="brand-tagline">Comparador inteligente de precios para Río Segundo y Pilar</p>
-    </div>
-    <div class="city-selector">
-      <label for="city-select">Ciudad</label>
-      <select id="city-select" aria-label="Seleccionar ciudad"></select>
+      <p class="brand-tagline">Precios actualizados de supermercados de Río Segundo y Pilar</p>
     </div>
     <nav class="main-nav" aria-label="Principal">
       <a href="#/" data-route="/" class="nav-link">Inicio</a>
-      <a href="#/comparador" data-route="/comparador" class="nav-link">Comparador</a>
-      <a href="#/changuito" data-route="/changuito" class="nav-link">Changuito</a>
       <a href="#/supermercados" data-route="/supermercados" class="nav-link">Supermercados</a>
-      <a href="./admin/admin.html" class="nav-link nav-admin">Admin</a>
+      <a href="#/lista" data-route="/lista" class="nav-link">Lista de compras</a>
     </nav>
   </header>
 
@@ -37,26 +31,18 @@
   <template id="home-template">
     <section class="hero">
       <h1>Encontrá el mejor precio en segundos</h1>
-      <p>Explorá las categorías destacadas o buscá entre cientos de ofertas de supermercados locales.</p>
+      <p>Explorá los supermercados disponibles o armá tu lista de compras con las mejores ofertas vigentes.</p>
       <div class="hero-actions">
-        <a class="cta" href="#/comparador">Ir al comparador</a>
-        <a class="cta secondary" href="#/changuito">Armar changuito</a>
+        <a class="cta" href="#/supermercados">Ver supermercados</a>
+        <a class="cta secondary" href="#/lista">Abrir lista de compras</a>
       </div>
     </section>
     <section class="top-categories" aria-labelledby="top-categories-title">
-      <h2 id="top-categories-title">Categorías destacadas</h2>
+      <h2 id="top-categories-title">Accesos rápidos</h2>
       <div class="categories-grid">
-        <button class="category-pill" data-category="Almacén">Almacén</button>
-        <button class="category-pill" data-category="Lácteos">Lácteos</button>
-        <button class="category-pill" data-category="Bebidas">Bebidas</button>
-        <button class="category-pill" data-category="Limpieza">Limpieza</button>
-        <button class="category-pill" data-category="Frescos">Frescos</button>
+        <a class="quick-link" href="#/supermercados">Supermercados</a>
+        <a class="quick-link" href="#/lista">Lista de compras</a>
       </div>
-    </section>
-    <section class="quick-links" aria-label="Accesos rápidos">
-      <a class="quick-link" href="#/comparador">Comparador</a>
-      <a class="quick-link" href="#/changuito">Changuito</a>
-      <a class="quick-link" href="#/supermercados">Supermercados</a>
     </section>
     <section class="legal-highlight" aria-live="polite"></section>
   </template>

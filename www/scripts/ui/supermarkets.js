@@ -1,60 +1,76 @@
-import { fetchSupermercados, fetchSupermarketsFromApi } from '../store.js';
+import { fetchPublicSupermarkets } from '../store.js';
 
-export function createSupermarketsView({ ciudad }) {
+export function createSupermarketsView({ onSelectSupermercado }) {
   const container = document.createElement('section');
   container.className = 'section-card supermarkets-view';
+
   const title = document.createElement('h2');
-  title.textContent = `Supermercados en ${ciudad}`;
+  title.textContent = 'Supermercados disponibles';
   container.appendChild(title);
 
-  const list = document.createElement('div');
-  list.className = 'card-grid';
+  const list = document.createElement('ul');
+  list.className = 'supermarkets-list';
+  list.setAttribute('role', 'list');
   container.appendChild(list);
+
+  render();
 
   async function render() {
     list.textContent = '';
-    let supermercados = await fetchSupermarketsFromApi(ciudad);
-    if (!supermercados.length) {
-      supermercados = await fetchSupermercados(ciudad);
-    }
-    if (!supermercados.length) {
-      const empty = document.createElement('p');
-      empty.textContent = 'Aún no hay supermercados cargados para esta ciudad.';
-      list.appendChild(empty);
-      return;
-    }
-    for (const supermercado of supermercados) {
-      list.appendChild(renderCard(supermercado));
+    const loading = document.createElement('p');
+    loading.className = 'muted';
+    loading.textContent = 'Cargando supermercados…';
+    list.appendChild(loading);
+
+    try {
+      const supermercados = await fetchPublicSupermarkets();
+      list.textContent = '';
+
+      if (!supermercados.length) {
+        const empty = document.createElement('p');
+        empty.className = 'muted';
+        empty.textContent = 'Todavía no hay supermercados activos disponibles.';
+        list.appendChild(empty);
+        return;
+      }
+
+      supermercados.forEach((supermercado) => {
+        list.appendChild(renderItem(supermercado));
+      });
+    } catch (error) {
+      console.error('No se pudieron cargar los supermercados', error);
+      list.textContent = '';
+      const failure = document.createElement('p');
+      failure.className = 'muted';
+      failure.textContent = 'No pudimos obtener la lista de supermercados. Intentá nuevamente más tarde.';
+      list.appendChild(failure);
     }
   }
 
-  function renderCard(supermercado) {
-    const card = document.createElement('article');
-    card.className = 'map-card';
-    const nombre = supermercado.nombre || supermercado.name || 'Supermercado';
-    const direccion = supermercado.direccion || supermercado.address || '';
-    const horarios = supermercado.horarios || supermercado.schedule || '';
-    const ciudadActual = supermercado.ciudad || ciudad;
-    const name = document.createElement('h3');
-    name.textContent = nombre;
-    const address = document.createElement('p');
-    address.textContent = direccion || 'Dirección pendiente';
-    const hours = document.createElement('p');
-    hours.textContent = horarios || '';
+  function renderItem(supermercado) {
+    const item = document.createElement('li');
+    item.className = 'supermarket-row';
+
     const button = document.createElement('button');
-    button.className = 'button';
     button.type = 'button';
-    button.textContent = 'Abrir en Maps';
+    button.className = 'supermarket-button';
+    button.textContent = buildDisplay(supermercado);
     button.addEventListener('click', () => {
-      const query = `${nombre} ${direccion || ciudadActual}`.trim();
-      window.open(supermercado.maps_url || `https://www.google.com/maps/search/${encodeURIComponent(query)}`, '_blank');
+      onSelectSupermercado?.(supermercado);
     });
-    card.append(name, address);
-    if (horarios) card.appendChild(hours);
-    card.appendChild(button);
-    return card;
+
+    item.appendChild(button);
+    return item;
   }
 
-  render();
+  function buildDisplay(supermercado) {
+    const nombre = supermercado.nombre?.trim() || 'Supermercado';
+    const direccion = supermercado.direccion?.trim() || '';
+    const ciudad = supermercado.ciudad?.trim() || '';
+    const direccionSegment = direccion || '—';
+    const ciudadSegment = ciudad || '—';
+    return `${nombre} - ${direccionSegment} - ${ciudadSegment}`;
+  }
+
   return container;
 }

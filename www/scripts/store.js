@@ -910,7 +910,7 @@ export async function fetchPublicSupermarkets({ force = false } = {}) {
     return caches.publicSupermercados.slice();
   }
   try {
-    const response = await fetch(buildPublicUrl('/supermercados'));
+    const response = await fetch(buildPublicUrl('/supermarkets_list.php', { is_active: 1, limit: 200 }));
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }

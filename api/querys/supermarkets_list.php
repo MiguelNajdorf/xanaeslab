@@ -78,14 +78,12 @@ $orderColumn = $allowedOrderColumns[$order] ?? 's.name';
 $sql = 'SELECT s.id, s.city_id, c.slug AS city_slug, c.name AS city_name, c.state AS city_state, '
     . 's.name, s.slug, s.address, s.city, s.state, s.zip, s.phone, s.website, s.is_active, s.created_at, s.updated_at '
     . $joins . ' WHERE ' . implode(' AND ', $conditions)
-    . " ORDER BY $orderColumn $orderDir LIMIT :limit OFFSET :offset";
+    . sprintf(' ORDER BY %s %s LIMIT %d OFFSET %d', $orderColumn, $orderDir, $limit, $offset);
 
 $stmt = $pdo->prepare($sql);
 foreach ($params as $key => $value) {
     $stmt->bindValue($key, $value);
 }
-$stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $items = $stmt->fetchAll();
 

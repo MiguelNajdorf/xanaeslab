@@ -269,7 +269,7 @@ export async function citiesList(filters = {}) {
 }
 
 export async function supermarketsList(filters = {}) {
-  return apiFetch('supermarkets_list.php', { params: filters });
+  return apiFetch('https://anagramdev.com/apps/xanaeslab/querys/supermarkets_list.php', { params: filters });
 }
 
 export async function supermarketGet(id) {

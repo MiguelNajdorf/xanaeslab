@@ -942,11 +942,12 @@ export async function fetchPublicSupermarkets({ force = false } = {}) {
     return caches.publicSupermercados.slice();
   }
   try {
-    const response = await fetch(buildPublicUrl('/querys/supermarkets_list.php', {
-      is_active: 1,
-      limit: 100,
-      order: 'name',
-    }));
+    const response = await fetch('https://anagramdev.com/apps/xanaeslab/querys/supermarkets_list.php', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }

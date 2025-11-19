@@ -746,7 +746,7 @@ export async function deleteOfertas(filterFn) {
   return toKeep.length;
 }
 
-const PUBLIC_API_BASE = '/api';
+const PUBLIC_API_BASE = 'https://anagramdev.com/apps/xanaeslab';
 const PUBLIC_QUERY_BASE = 'https://anagramdev.com/apps/xanaeslab/querys';
 
 function buildPublicUrl(path, params = {}) {
@@ -839,7 +839,7 @@ function normalizarFechaPublica(value) {
 
 function normalizarOfertaPublica(item, supermercadoId) {
   const productoId = Number(item?.producto_id ?? item?.product_id ?? item?.id_producto ?? 0) || 0;
-  const precioIndividual = parseNumber(item?.precio_individual ?? item?.precio ?? item?.price);
+  const precioIndividual = parseNumber(item?.precio_individual ? String(item.precio_individual).replace(',', '.') : item?.precio ?? item?.price);
   const precioBase = parseNumber(item?.precio_por_base ?? item?.precio_base ?? item?.price_base);
   const precioEfectivo = parseNumber(item?.precio_efectivo ?? item?.precioPromo ?? item?.precio_total);
   const cantidadBase = parseNumber(item?.cantidad_base ?? item?.cantidadBase);
@@ -847,11 +847,11 @@ function normalizarOfertaPublica(item, supermercadoId) {
   const minPromo = parseNumber(item?.min_cantidad_para_promo ?? item?.cantidad_minima ?? item?.cantidadMinima);
   const ofertaId = item?.oferta_id ?? item?.id ?? `${supermercadoId}-${productoId}`;
   const presentacion = formatPresentation(item?.presentacion ?? item?.presentacion_corta ?? item?.presentacion_larga ?? item?.size ?? '');
-  const normalized = {
+const normalized = {
     id: ofertaId,
     oferta_id: ofertaId,
     producto_id: productoId,
-    producto: item?.nombre ?? item?.producto ?? item?.product_name ?? '',
+    producto: item?.producto ?? item?.nombre ?? item?.product_name ?? '',
     marca: item?.marca ?? item?.brand ?? '',
     presentacion,
     precio_individual: precioIndividual ?? 0,
@@ -869,7 +869,7 @@ function normalizarOfertaPublica(item, supermercadoId) {
     vigencia_hasta: normalizarFechaPublica(item?.vigencia_hasta ?? item?.vigenciaHasta ?? item?.hasta),
     imagen_url: item?.imagen_url ?? item?.imagen ?? item?.image ?? null,
     supermercado_id: Number(item?.supermercado_id ?? supermercadoId ?? 0) || 0,
-    supermercado_nombre: item?.supermercado_nombre ?? item?.supermercado ?? '',
+    supermercado_nombre: item?.supermercado ?? item?.supermercado_nombre ?? '',
   };
   if (normalized.min_cantidad_para_promo === null || normalized.min_cantidad_para_promo === undefined) {
     const calculada = promoMinimumQuantity(normalized);
@@ -951,8 +951,8 @@ export async function fetchPublicSupermarkets({ force = false } = {}) {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    const payload = await response.json();
-    const items = Array.isArray(payload) ? payload : (payload?.items || payload?.results || []);
+const payload = await response.json();
+    const items = Array.isArray(payload) ? payload : (payload?.data?.items || payload?.items || payload?.results || []);
     const normalizados = items.map(normalizarSupermercadoPublico).filter(item => item.activo !== false);
     normalizados.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     caches.publicSupermercados = normalizados;
@@ -994,17 +994,22 @@ export async function fetchOffersForSupermarket(supermercadoId, { force = false 
   if (!force && caches.ofertasPublicasPorSuper.has(superId)) {
     return caches.ofertasPublicasPorSuper.get(superId).slice();
   }
-  await fetchPublicSupermercados();
+  await fetchPublicSupermarkets();
   try {
-    const response = await fetch(buildPublicUrl('/ofertas', { vigentes: 1, supermercado_id: superId }));
+    const response = await fetch(buildPublicUrl('https://anagramdev.com/apps/xanaeslab/querys/ofertas.php', { vigentes: 1, supermercado_id: superId }));
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    const payload = await response.json();
-    const items = Array.isArray(payload) ? payload : (payload?.items || payload?.results || []);
+const payload = await response.json();
+    const items = Array.isArray(payload) ? payload : (payload?.data?.items ?? payload?.items ?? payload?.results ?? []);
     const now = new Date();
-    const normalizados = items
-      .map(item => normalizarOfertaPublica(item, superId))
+const normalizados = items
+      .map(item => {
+        console.log('Item original:', item);
+        const normalized = normalizarOfertaPublica(item, superId);
+        console.log('Item normalizado:', normalized);
+        return normalized;
+      })
       .map(oferta => ({
         ...oferta,
         supermercado_nombre: oferta.supermercado_nombre || getPublicSupermarketById(oferta.supermercado_id)?.nombre || '',

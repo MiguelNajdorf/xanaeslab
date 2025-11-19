@@ -5,7 +5,11 @@ import { createSupermarketOffersView } from './ui/supermarketOffers.js';
 
 const appRoot = document.getElementById('app');
 const navLinks = Array.from(document.querySelectorAll('.nav-link'));
-let legalText = 'Actualizamos semanalmente según disponibilidad pública de cada supermercado.';
+const sideMenuLinks = Array.from(document.querySelectorAll('.side-menu-link'));
+const menuToggle = document.querySelector('.menu-toggle');
+const sideMenu = document.getElementById('sideMenu');
+const sideMenuOverlay = document.getElementById('sideMenuOverlay');
+let legalText = 'Información obtenida de fuentes públicas. Xanaes Lab no se responsabiliza por cambios o diferencias en los datos mostrados.';
 
 const rateLimitWindow = 60 * 1000;
 const rateLimitMax = 60;
@@ -22,6 +26,57 @@ async function init() {
   aplicarAjustes();
   await router();
   window.addEventListener('hashchange', router);
+  
+  // Inicializar menú lateral
+  initializeSideMenu();
+}
+
+function initializeSideMenu() {
+  if (menuToggle) {
+    menuToggle.addEventListener('click', toggleSideMenu);
+  }
+  
+  if (sideMenuOverlay) {
+    sideMenuOverlay.addEventListener('click', closeSideMenu);
+  }
+  
+  if (sideMenu) {
+    const closeBtn = sideMenu.querySelector('.side-menu-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeSideMenu);
+    }
+  }
+  
+  // Cerrar menú al cambiar de ruta
+  window.addEventListener('hashchange', closeSideMenu);
+}
+
+function toggleSideMenu() {
+  const isOpen = sideMenu?.classList.contains('open');
+  
+  if (isOpen) {
+    closeSideMenu();
+  } else {
+    openSideMenu();
+  }
+}
+
+function openSideMenu() {
+  if (menuToggle) menuToggle.classList.add('active');
+  if (menuToggle) menuToggle.setAttribute('aria-expanded', 'true');
+  if (sideMenu) sideMenu.classList.add('open');
+  if (sideMenuOverlay) sideMenuOverlay.classList.add('active');
+  if (sideMenuOverlay) sideMenuOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSideMenu() {
+  if (menuToggle) menuToggle.classList.remove('active');
+  if (menuToggle) menuToggle.setAttribute('aria-expanded', 'false');
+  if (sideMenu) sideMenu.classList.remove('open');
+  if (sideMenuOverlay) sideMenuOverlay.classList.remove('active');
+  if (sideMenuOverlay) sideMenuOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
 }
 
 async function router() {
@@ -34,10 +89,25 @@ async function router() {
     return;
   }
 
-  switch (path) {
+switch (path) {
     case 'supermercados': {
       await renderSupermercados();
       setActiveNav('/supermercados');
+      break;
+    }
+    case 'farmacias': {
+      await renderFarmacias();
+      setActiveNav('/farmacias');
+      break;
+    }
+    case 'basura': {
+      await renderBasura();
+      setActiveNav('/basura');
+      break;
+    }
+    case 'menu': {
+      await renderMenu();
+      setActiveNav('/menu');
       break;
     }
     case 'lista': {
@@ -62,6 +132,7 @@ async function router() {
 }
 
 function setActiveNav(route) {
+  // Header navigation
   navLinks.forEach((link) => {
     const match = link.dataset.route === route;
     link.classList.toggle('is-active', match);
@@ -71,6 +142,19 @@ function setActiveNav(route) {
       link.removeAttribute('aria-current');
     }
   });
+  
+  // Side menu navigation
+  if (sideMenuLinks) {
+    sideMenuLinks.forEach((link) => {
+      const match = link.dataset.route === route;
+      link.classList.toggle('active', match);
+      if (match) {
+        link.setAttribute('aria-current', 'page');
+      } else {
+        link.removeAttribute('aria-current');
+      }
+    });
+  }
 }
 
 async function renderHome() {
@@ -102,12 +186,28 @@ async function renderListaDeCompras() {
 }
 
 async function renderSupermercadoDetalle(id) {
-  appRoot.textContent = '';
-  purgeVencidas();
-  const view = createSupermarketOffersView({ supermercadoId: id, onBack: () => {
-    window.location.hash = '#/supermercados';
-  }});
-  appRoot.appendChild(view);
+  try {
+    console.log('Renderizando detalle de supermercado:', id);
+    appRoot.textContent = '';
+    purgeVencidas();
+    const view = createSupermarketOffersView({ supermercadoId: id, onBack: () => {
+      window.location.hash = '#/supermercados';
+    }});
+    appRoot.appendChild(view);
+    console.log('Vista de supermercado agregada correctamente');
+  } catch (error) {
+    console.error('Error al renderizar detalle de supermercado:', error);
+    appRoot.textContent = '';
+    const section = document.createElement('section');
+    section.className = 'section-card';
+    const title = document.createElement('h2');
+    title.textContent = 'Error al cargar las ofertas';
+    const message = document.createElement('p');
+    message.textContent = `No pudimos cargar las ofertas del supermercado. Error: ${error.message}`;
+    section.appendChild(title);
+    section.appendChild(message);
+    appRoot.appendChild(section);
+  }
 }
 
 async function renderNotFound() {
@@ -129,8 +229,81 @@ function aplicarAjustes() {
   if (ajustes['ajuste:legal']) {
     legalText = ajustes['ajuste:legal'];
   } else {
-    legalText = 'Actualizamos semanalmente según disponibilidad pública de cada supermercado.';
+    legalText = 'Información obtenida de fuentes públicas. Xanaes Lab no se responsabiliza por cambios o diferencias en los datos mostrados.';
   }
+}
+
+async function renderFarmacias() {
+  appRoot.textContent = '';
+  const section = document.createElement('section');
+  section.className = 'section-card';
+  
+  const title = document.createElement('h2');
+  title.textContent = 'Farmacias de turno';
+  
+  const content = document.createElement('div');
+  content.innerHTML = `
+    <p>Información sobre farmacias de turno en Río Segundo y Pilar.</p>
+    <p>Próximamente podrás ver aquí las farmacias actualmente de turno.</p>
+  `;
+  
+  section.appendChild(title);
+  section.appendChild(content);
+  appRoot.appendChild(section);
+}
+
+async function renderBasura() {
+  appRoot.textContent = '';
+  const section = document.createElement('section');
+  section.className = 'section-card';
+  
+  const title = document.createElement('h2');
+  title.textContent = 'Recolección de basura';
+  
+  const content = document.createElement('div');
+  content.innerHTML = `
+    <p>Calendario de recolección de basura por barrio en Río Segundo y Pilar.</p>
+    <p>Próximamente podrás ver aquí los días de recolección para tu barrio.</p>
+  `;
+  
+  section.appendChild(title);
+  section.appendChild(content);
+  appRoot.appendChild(section);
+}
+
+async function renderMenu() {
+  appRoot.textContent = '';
+  const section = document.createElement('section');
+  section.className = 'section-card';
+  
+  const title = document.createElement('h2');
+  title.textContent = 'Todas las opciones';
+  
+  const grid = document.createElement('div');
+  grid.className = 'options-grid';
+  
+  const options = [
+    { title: 'Ofertas de Supermercados', desc: 'Ver supermercados disponibles', icon: '🛒', href: '#/supermercados' },
+    { title: 'Farmacias', desc: 'Farmacias de turno', icon: '💊', href: '#/farmacias' },
+    { title: 'Basura', desc: 'Recolección por barrio', icon: '🗑️', href: '#/basura' },
+    { title: 'Lista de compras', desc: 'Gestionar tu lista', icon: '📋', href: '#/lista' },
+  ];
+  
+  options.forEach(option => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.innerHTML = `
+      <div class="option-icon">${option.icon}</div>
+      <h3>${option.title}</h3>
+      <p>${option.desc}</p>
+      <a href="${option.href}" class="option-link">Ver más</a>
+    `;
+    grid.appendChild(card);
+  });
+  
+  section.appendChild(title);
+  section.appendChild(grid);
+  appRoot.appendChild(section);
 }
 
 function obtenerLeyendaLegal() {

@@ -4,8 +4,8 @@ export function createSupermarketsView({ onSelectSupermercado }) {
   const container = document.createElement('section');
   container.className = 'section-card supermarkets-view';
 
-  const title = document.createElement('h2');
-  title.textContent = 'Supermercados disponibles';
+const title = document.createElement('h2');
+  title.textContent = 'Ofertas de Supermercados';
   container.appendChild(title);
 
   const list = document.createElement('ul');
@@ -63,13 +63,16 @@ export function createSupermarketsView({ onSelectSupermercado }) {
     return item;
   }
 
-  function buildDisplay(supermercado) {
+function buildDisplay(supermercado) {
     const nombre = supermercado.nombre?.trim() || 'Supermercado';
     const direccion = supermercado.direccion?.trim() || '';
     const ciudad = supermercado.ciudad?.trim() || '';
-    const direccionSegment = direccion || '—';
-    const ciudadSegment = ciudad || '—';
-    return `${nombre} - ${direccionSegment} - ${ciudadSegment}`;
+    
+    const segments = [nombre];
+    if (direccion) segments.push(direccion);
+    if (ciudad) segments.push(ciudad);
+    
+    return segments.join(' - ');
   }
 
   return container;

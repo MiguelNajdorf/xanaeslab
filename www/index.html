@@ -13,35 +13,60 @@
   <header class="site-header">
     <div class="brand">
       <span class="brand-badge">Xanaes Lab</span>
-      <p class="brand-tagline">Precios actualizados de supermercados de Río Segundo y Pilar</p>
+      <p class="brand-tagline">Información importante de Río Segundo y Pilar</p>
     </div>
+<button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false">
+      <span class="hamburger"></span>
+    </button>
     <nav class="main-nav" aria-label="Principal">
       <a href="#/" data-route="/" class="nav-link">Inicio</a>
-      <a href="#/supermercados" data-route="/supermercados" class="nav-link">Supermercados</a>
-      <a href="#/lista" data-route="/lista" class="nav-link">Lista de compras</a>
+      <a href="#/supermercados" data-route="/supermercados" class="nav-link">Ofertas de Supermercados</a>
+      <a href="#/farmacias" data-route="/farmacias" class="nav-link">Farmacias</a>
+      <a href="#/basura" data-route="/basura" class="nav-link">Basura</a>
+      <a href="#/menu" data-route="/menu" class="nav-link">Más opciones</a>
     </nav>
   </header>
 
   <main id="app" class="app-shell" tabindex="-1"></main>
 
-  <footer class="legal-footer">
-    <p>Los precios y vigencias son obtenidos de revistas públicas de cada supermercado. Xanaes Lab no se responsabiliza por diferencias en góndola.</p>
+<footer class="legal-footer">
+    <p>Información obtenida de fuentes públicas. Xanaes Lab no se responsabiliza por cambios o diferencias en los datos mostrados.</p>
   </footer>
+
+  <div class="side-menu" id="sideMenu" role="navigation" aria-label="Menú lateral">
+    <div class="side-menu-header">
+      <h3>Xanaes Lab</h3>
+      <button class="side-menu-close" aria-label="Cerrar menú" aria-expanded="false">
+        <span class="close-icon"></span>
+      </button>
+    </div>
+    <nav class="side-menu-nav">
+      <a href="#/" class="side-menu-link" data-route="/">🏠 Inicio</a>
+      <a href="#/supermercados" class="side-menu-link" data-route="/supermercados">🛒 Ofertas de Supermercados</a>
+      <a href="#/farmacias" class="side-menu-link" data-route="/farmacias">💊 Farmacias de turno</a>
+      <a href="#/basura" class="side-menu-link" data-route="/basura">🗑️ Recolección de basura</a>
+      <a href="#/menu" class="side-menu-link" data-route="/menu">📋 Más opciones</a>
+    </nav>
+  </div>
+
+  <div class="side-menu-overlay" id="sideMenuOverlay" aria-hidden="true"></div>
 
   <template id="home-template">
     <section class="hero">
-      <h1>Encontrá el mejor precio en segundos</h1>
-      <p>Explorá los supermercados disponibles o armá tu lista de compras con las mejores ofertas vigentes.</p>
-      <div class="hero-actions">
-        <a class="cta" href="#/supermercados">Ver supermercados</a>
-        <a class="cta secondary" href="#/lista">Abrir lista de compras</a>
+<h1>Toda la información que necesitas en un solo lugar</h1>
+      <p>Accede a información actualizada de servicios, comercios y utilidades de Río Segundo y Pilar.</p>
+<div class="hero-actions">
+        <a class="cta" href="#/menu">Ver todas las opciones</a>
+        <a class="cta secondary" href="#/supermercados">Ver ofertas de supermercados</a>
       </div>
     </section>
     <section class="top-categories" aria-labelledby="top-categories-title">
       <h2 id="top-categories-title">Accesos rápidos</h2>
-      <div class="categories-grid">
-        <a class="quick-link" href="#/supermercados">Supermercados</a>
-        <a class="quick-link" href="#/lista">Lista de compras</a>
+<div class="categories-grid">
+        <a class="quick-link" href="#/supermercados">Ofertas de Supermercados</a>
+        <a class="quick-link" href="#/farmacias">Farmacias de turno</a>
+        <a class="quick-link" href="#/basura">Recolección de basura</a>
+        <a class="quick-link" href="#/menu">Ver más opciones</a>
       </div>
     </section>
     <section class="legal-highlight" aria-live="polite"></section>

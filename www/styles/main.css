@@ -30,8 +30,9 @@ body {
 
 .site-header {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr auto;
   gap: 0.75rem;
+  align-items: center;
   padding: 1.5rem 1rem 1rem;
   background: linear-gradient(135deg, var(--brand-primary), var(--brand-dark));
   color: white;
@@ -85,6 +86,185 @@ body {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  cursor: pointer;
+  position: relative;
+}
+
+.hamburger {
+  display: block;
+  width: 24px;
+  height: 18px;
+  position: relative;
+}
+
+.hamburger span {
+  display: block;
+  position: absolute;
+  height: 3px;
+  width: 100%;
+  background: white;
+  border-radius: 2px;
+  opacity: 1;
+  left: 0;
+  transform: rotate(0deg);
+  transition: 0.25s ease-in-out;
+}
+
+.hamburger span:nth-child(1) {
+  top: 0px;
+}
+
+.hamburger span:nth-child(2) {
+  top: 7px;
+}
+
+.hamburger span:nth-child(3) {
+  top: 14px;
+}
+
+.menu-toggle.active .hamburger span:nth-child(1) {
+  top: 7px;
+  transform: rotate(135deg);
+}
+
+.menu-toggle.active .hamburger span:nth-child(2) {
+  opacity: 0;
+  left: -60px;
+}
+
+.menu-toggle.active .hamburger span:nth-child(3) {
+  top: 7px;
+  transform: rotate(-135deg);
+}
+
+.side-menu {
+  position: fixed;
+  top: 0;
+  left: -300px;
+  width: 300px;
+  height: 100vh;
+  background: white;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: left 0.3s ease-in-out;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-menu.open {
+  left: 0;
+}
+
+.side-menu-header {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-dark));
+  color: white;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.side-menu-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.side-menu-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.side-menu-nav {
+  flex: 1;
+  padding: 1rem 0;
+}
+
+.side-menu-link {
+  display: block;
+  padding: 1rem 1.5rem;
+  color: var(--text-color);
+  text-decoration: none;
+  transition: background var(--transition);
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.side-menu-link:hover,
+.side-menu-link:focus {
+  background: var(--brand-light);
+}
+
+.side-menu-link.active {
+  background: var(--brand-primary);
+  color: white;
+}
+
+.side-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.side-menu-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block !important;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition);
+    min-width: 44px;
+    min-height: 44px;
+    align-self: center;
+  }
+  
+  .menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+  }
+  
+  .menu-toggle:focus {
+    outline: 3px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+  
+  .main-nav {
+    display: none;
+  }
+  
+  .side-menu {
+    width: 280px;
+  }
 }
 
 .main-nav .nav-link {
@@ -622,9 +802,80 @@ body {
   transform: translateY(10px);
 }
 
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.option-card {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.option-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(35, 25, 66, 0.2);
+}
+
+.option-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.option-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.3rem;
+  color: var(--brand-primary);
+}
+
+.option-card p {
+  margin: 0 0 1.5rem 0;
+  color: var(--muted-text);
+  font-size: 0.95rem;
+}
+
+.option-link {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background: var(--brand-primary);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  transition: background var(--transition);
+}
+
+.option-link:hover {
+  background: var(--brand-dark);
+}
+
 @media (min-width: 768px) {
   .supermarket-offers-header {
     grid-template-columns: auto 1fr;
     align-items: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .menu-toggle {
+    display: block;
+  }
+  
+  .main-nav {
+    display: none;
+  }
+  
+  .side-menu {
+    width: 280px;
+  }
+  
+  .options-grid {
+    grid-template-columns: 1fr;
   }
 }

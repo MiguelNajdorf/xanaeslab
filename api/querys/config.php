@@ -7,9 +7,23 @@ declare(strict_types=1);
 // CORS headers (replicates login.php behaviour)
 // --------------------------------------------------
 if (!defined('XANAESLAB_CORS_APPLIED')) {
-    $allowedOrigin = 'http://xanaeslab.local';
+    // Development-friendly: allow multiple origins during local testing
+    $allowedOrigins = [
+        'http://xanaeslab.local',
+        'http://localhost',
+        'http://localhost:3000',
+        'http://127.0.0.1',
+        'http://127.0.0.1:3000',
+    ];
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+    } else {
+        header('Access-Control-Allow-Origin: http://xanaeslab.local');
+    }
 
-    header('Access-Control-Allow-Origin: ' . $allowedOrigin);
+
+    // header dynamically set above; using allowlist or default
     header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization');    header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');

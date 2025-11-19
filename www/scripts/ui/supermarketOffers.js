@@ -3,87 +3,66 @@ import { fetchPublicSupermarkets, fetchOffersForSupermarket, fetchBestPrices, ge
 import { formatCurrency } from '../format.js';
 
 export function createSupermarketOffersView({ supermercadoId, onBack }) {
-  const container = document.createElement('section');
-  container.className = 'section-card supermarket-offers-view';
-
-  const header = document.createElement('div');
-  header.className = 'supermarket-offers-header';
-  container.appendChild(header);
-
-  if (onBack) {
-    const back = document.createElement('button');
-    back.type = 'button';
-    back.className = 'button-tertiary';
-    back.textContent = 'Volver a supermercados';
-    back.addEventListener('click', onBack);
-    header.appendChild(back);
-  }
-
-  const title = document.createElement('h2');
-  title.textContent = 'Ofertas vigentes';
-  header.appendChild(title);
-
-  const subtitle = document.createElement('p');
-  subtitle.className = 'muted';
-  header.appendChild(subtitle);
-
-  const liveRegion = document.createElement('div');
-  liveRegion.className = 'sr-only';
-  liveRegion.setAttribute('aria-live', 'polite');
-  container.appendChild(liveRegion);
-
-  const list = document.createElement('div');
-  list.className = 'offers-grid';
-  container.appendChild(list);
-
-  render();
+  let container, header, title, subtitle, liveRegion, list;
 
   async function render() {
-    list.textContent = '';
-    const loading = document.createElement('p');
-    loading.className = 'muted';
-    loading.textContent = 'Cargando ofertas…';
-    list.appendChild(loading);
-
-    await fetchPublicSupermarkets();
-    const info = getPublicSupermarketById(supermercadoId);
-    if (info) {
-      title.textContent = `Ofertas en ${info.nombre}`;
-      subtitle.textContent = `${info.nombre} - ${info.direccion || ''} - ${info.ciudad || ''}`;
-    } else {
-      subtitle.textContent = '';
-    }
-
     try {
-      const ofertas = await fetchOffersForSupermarket(supermercadoId);
-      const ahora = new Date();
-      const vigentes = ofertas.filter(oferta => !oferta.vigencia_hasta || new Date(oferta.vigencia_hasta) >= ahora);
+      console.log('Iniciando renderizado de ofertas');
       list.textContent = '';
-      if (!vigentes.length) {
-        const empty = document.createElement('p');
-        empty.className = 'muted';
-        empty.textContent = 'No hay ofertas vigentes para este supermercado.';
-        list.appendChild(empty);
-        return;
+      const loading = document.createElement('p');
+      loading.className = 'muted';
+      loading.textContent = 'Cargando ofertas…';
+      list.appendChild(loading);
+
+      await fetchPublicSupermarkets();
+      const info = getPublicSupermarketById(supermercadoId);
+      if (info) {
+        title.textContent = `Ofertas en ${info.nombre}`;
+        subtitle.textContent = `${info.nombre} - ${info.direccion || ''} - ${info.ciudad || ''}`;
+      } else {
+        subtitle.textContent = '';
       }
 
-      const ordenadas = vigentes.slice().sort((a, b) => ordenarOfertas(a, b));
-      const bestPrices = await fetchBestPrices(ordenadas.map(oferta => oferta.producto_id));
+      try {
+        const ofertas = await fetchOffersForSupermarket(supermercadoId);
+        const ahora = new Date();
+        const vigentes = ofertas.filter(oferta => !oferta.vigencia_hasta || new Date(oferta.vigencia_hasta) >= ahora);
+        list.textContent = '';
+        if (!vigentes.length) {
+          const empty = document.createElement('p');
+          empty.className = 'muted';
+          empty.textContent = 'No hay ofertas vigentes para este supermercado.';
+          list.appendChild(empty);
+          return;
+        }
 
-      ordenadas.forEach((oferta) => {
-        list.appendChild(renderOffer(oferta, bestPrices));
-      });
+        const ordenadas = vigentes.slice().sort((a, b) => ordenarOfertas(a, b));
+        const bestPrices = await fetchBestPrices(ordenadas.map(oferta => oferta.producto_id));
+
+        ordenadas.forEach((oferta) => {
+          list.appendChild(renderOffer(oferta, bestPrices));
+        });
+      } catch (error) {
+        console.error('No se pudieron cargar las ofertas', error);
+        list.textContent = '';
+        const failure = document.createElement('p');
+        failure.className = 'muted';
+        failure.textContent = 'No pudimos obtener las ofertas de este supermercado. Intentá nuevamente más tarde.';
+        list.appendChild(failure);
+      }
     } catch (error) {
-      console.error('No se pudieron cargar las ofertas', error);
+      console.error('Error en render:', error);
       list.textContent = '';
-      const failure = document.createElement('p');
-      failure.className = 'muted';
-      failure.textContent = 'No pudimos obtener las ofertas de este supermercado. Intentá nuevamente más tarde.';
-      list.appendChild(failure);
+      const errorElement = document.createElement('p');
+      errorElement.className = 'error';
+      errorElement.textContent = `Error: ${error.message}`;
+      list.appendChild(errorElement);
     }
   }
 
   function renderOffer(oferta, bestPrices) {
+    console.log('Renderizando oferta:', oferta);
+
     const card = document.createElement('article');
     card.className = 'offer-card';
 
@@ -106,7 +85,10 @@ export function createSupermarketOffersView({ supermercadoId, onBack }) {
 
     const price = document.createElement('p');
     price.className = 'offer-price';
-    price.textContent = formatCurrency(oferta.precio_individual);
+    const precioNumerico = typeof oferta.precio_individual === 'string'
+      ? parseFloat(oferta.precio_individual.replace(',', '.'))
+      : oferta.precio_individual;
+    price.textContent = formatCurrency(precioNumerico || 0);
     card.appendChild(price);
 
     if (oferta.precio_por_base) {
@@ -122,7 +104,7 @@ export function createSupermarketOffersView({ supermercadoId, onBack }) {
 
     const status = document.createElement('p');
     status.className = 'offer-status';
-    status.textContent = resolverMensajeEstado(oferta, bestPrices.get(oferta.producto_id));
+    status.textContent = resolverMensajeEstado(oferta, bestPrices?.get(oferta.producto_id));
     card.appendChild(status);
 
     const actions = document.createElement('div');
@@ -158,29 +140,73 @@ export function createSupermarketOffersView({ supermercadoId, onBack }) {
     }, 2000);
   }
 
+  function ordenarOfertas(a, b) {
+    const precioBaseA = a.precio_por_base ?? a.precio_individual ?? 0;
+    const precioBaseB = b.precio_por_base ?? b.precio_individual ?? 0;
+    if (precioBaseA !== precioBaseB) {
+      return precioBaseA - precioBaseB;
+    }
+    const nombreA = `${a.producto} ${a.marca}`.toLowerCase();
+    const nombreB = `${b.producto} ${b.marca}`.toLowerCase();
+    return nombreA.localeCompare(nombreB, 'es');
+  }
+
+  function resolverMensajeEstado(oferta, bestInfo) {
+    if (!bestInfo || bestInfo.unico) {
+      return 'Es el único precio publicado';
+    }
+    const precio = oferta.precio_individual ?? 0;
+    const diff = Math.abs(precio - (bestInfo.mejor_precio ?? 0));
+    if (diff < 0.0001) {
+      return 'Es el mejor precio';
+    }
+    const nombre = bestInfo.mejor_supermercado || 'Otro supermercado';
+    return `${nombre} tiene mejor precio`;
+  }
+
+  try {
+    console.log('Creando vista de ofertas para supermercado:', supermercadoId);
+
+    container = document.createElement('section');
+    container.className = 'section-card supermarket-offers-view';
+
+    header = document.createElement('div');
+    header.className = 'supermarket-offers-header';
+    container.appendChild(header);
+
+    if (onBack) {
+      const back = document.createElement('button');
+      back.type = 'button';
+      back.className = 'button-tertiary';
+      back.textContent = 'Volver a supermercados';
+      back.addEventListener('click', onBack);
+      header.appendChild(back);
+    }
+
+    title = document.createElement('h2');
+    title.textContent = 'Ofertas vigentes';
+    header.appendChild(title);
+
+    subtitle = document.createElement('p');
+    subtitle.className = 'muted';
+    header.appendChild(subtitle);
+
+    liveRegion = document.createElement('div');
+    liveRegion.className = 'sr-only';
+    liveRegion.setAttribute('aria-live', 'polite');
+    container.appendChild(liveRegion);
+
+    list = document.createElement('div');
+    list.className = 'offers-grid';
+    container.appendChild(list);
+
+    render();
+
+    console.log('Vista de ofertas creada correctamente');
+  } catch (error) {
+    console.error('Error al crear vista de ofertas:', error);
+    throw error;
+  }
+
   return container;
-}
-
-function ordenarOfertas(a, b) {
-  const precioBaseA = a.precio_por_base ?? a.precio_individual ?? 0;
-  const precioBaseB = b.precio_por_base ?? b.precio_individual ?? 0;
-  if (precioBaseA !== precioBaseB) {
-    return precioBaseA - precioBaseB;
-  }
-  const nombreA = `${a.producto} ${a.marca}`.toLowerCase();
-  const nombreB = `${b.producto} ${b.marca}`.toLowerCase();
-  return nombreA.localeCompare(nombreB, 'es');
-}
-
-function resolverMensajeEstado(oferta, bestInfo) {
-  if (!bestInfo || bestInfo.unico) {
-    return 'Es el único precio publicado';
-  }
-  const precio = oferta.precio_individual ?? 0;
-  const diff = Math.abs(precio - (bestInfo.mejor_precio ?? 0));
-  if (diff < 0.0001) {
-    return 'Es el mejor precio';
-  }
-  const nombre = bestInfo.mejor_supermercado || 'Otro supermercado';
-  return `${nombre} tiene mejor precio`;
 }

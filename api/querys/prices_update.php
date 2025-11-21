@@ -73,6 +73,12 @@ if (isset($data['promo_type_id'])) {
     $params[':promo_type_id'] = $promoTypeId;
 }
 
+if (isset($data['restrictions'])) {
+    $restrictions = trim($data['restrictions']) !== '' ? trim($data['restrictions']) : null;
+    $updates[] = 'restrictions = :restrictions';
+    $params[':restrictions'] = $restrictions;
+}
+
 if (empty($updates)) {
     json_error('No se especificaron campos para actualizar', 400);
 }

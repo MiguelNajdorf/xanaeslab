@@ -63,8 +63,8 @@ try {
         // 4. Insert parsed offers
         $stmt = $pdo->prepare("
             INSERT INTO parsed_offers 
-            (offer_id, product_name, price, currency, valid_from, valid_to, promo_type_id, raw_text, confidence_score)
-            VALUES (:offer_id, :product_name, :price, :currency, :valid_from, :valid_to, :promo_type_id, :raw_text, :confidence_score)
+            (offer_id, product_name, price, currency, valid_from, valid_to, promo_type_id, restrictions, raw_text, confidence_score)
+            VALUES (:offer_id, :product_name, :price, :currency, :valid_from, :valid_to, :promo_type_id, :restrictions, :raw_text, :confidence_score)
         ");
 
         foreach ($parsedData as $item) {
@@ -84,6 +84,7 @@ try {
                 ':valid_from' => $item['valid_from'] ?? date('Y-m-d'),
                 ':valid_to' => $item['valid_to'] ?? null,
                 ':promo_type_id' => $promoTypeId,
+                ':restrictions' => $item['restrictions'] ?? null,
                 ':raw_text' => json_encode($item),
                 ':confidence_score' => 0.90 // Placeholder score from Gemini
             ]);
@@ -134,7 +135,8 @@ function call_gemini_api(string $imagePath, string $apiKey): array {
     - 'currency' (ISO code, e.g., ARS)
     - 'valid_from' (YYYY-MM-DD, use today if missing)
     - 'valid_to' (YYYY-MM-DD or null)
-    - 'promo_type_name' (string or null).
+    - 'promo_type_name' (string or null)
+    - 'restrictions' (string or null): Any restrictions or exceptions mentioned (e.g., 'No incluye moñitos ni coditos')
     
     If the image contains no offers, return an empty array [].";
 

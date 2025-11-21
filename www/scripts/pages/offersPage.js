@@ -290,7 +290,11 @@ function renderParsedItems(items, supermarketId) {
                         `).join('')}
                     </select>
                 </label>
-                
+                <label>
+                    Restricciones
+                    <textarea name="restrictions" rows="2" 
+                        placeholder="Ej: No incluye moñitos ni coditos">${item.restrictions || ''}</textarea>
+                </label>
                 <button type="submit" class="btn btn-primary btn-sm" style="margin-top: 10px;">Confirmar y Crear Precio</button>
             </form>
         `;

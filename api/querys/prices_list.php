@@ -66,6 +66,7 @@ $sql = 'SELECT
             p.valid_to,
             p.promo_type_id,
             pt.name AS promo_type_name,
+            p.restrictions,
             p.created_at,
             p.updated_at,
             CASE 

@@ -324,12 +324,8 @@ export async function neighborhoodsList(filters = {}) {
   return apiFetch('neighborhoods_list.php', { params: filters });
 }
 
-export async function neighborhoodCreate(payload) {
-  return apiFetch('neighborhoods_create.php', { method: 'POST', body: payload });
-}
-
 export async function neighborhoodUpdate(id, payload) {
-  return apiFetch('neighborhoods_update.php', { method: 'PATCH', params: { id }, body: payload });
+  return apiFetch('neighborhoods_update.php', { method: 'PUT', body: { id, ...payload } });
 }
 
 export async function neighborhoodDelete(id) {
@@ -348,8 +344,26 @@ export async function scheduleDelete(id) {
   return apiFetch('schedules_delete.php', { method: 'DELETE', body: { id } });
 }
 
-export async function pharmaciesList(filters = {}) {
-  return apiFetch('pharmacies_list.php', { params: filters });
+// Pharmacy Catalog (permanent pharmacy data)
+export async function pharmacyCatalogList(params = {}) {
+  return apiFetch('pharmacies_catalog_list.php', { params });
+}
+
+export async function pharmacyCatalogCreate(payload) {
+  return apiFetch('pharmacies_catalog_create.php', { method: 'POST', body: payload });
+}
+
+export async function pharmacyCatalogUpdate(id, payload) {
+  return apiFetch('pharmacies_catalog_update.php', { method: 'PUT', body: { id, ...payload } });
+}
+
+export async function pharmacyCatalogDelete(id) {
+  return apiFetch('pharmacies_catalog_delete.php', { method: 'DELETE', body: { id } });
+}
+
+// Pharmacy Duties (schedule assignments)
+export async function pharmaciesList(params = {}) {
+  return apiFetch('pharmacies_list.php', { params });
 }
 
 export async function pharmacyCreate(payload) {
@@ -357,11 +371,24 @@ export async function pharmacyCreate(payload) {
 }
 
 export async function pharmacyUpdate(id, payload) {
-  return apiFetch('pharmacies_update.php', { method: 'PATCH', params: { id }, body: payload });
+  return apiFetch('pharmacies_update.php', { method: 'PUT', body: { id, ...payload } });
 }
 
 export async function pharmacyDelete(id) {
   return apiFetch('pharmacies_delete.php', { method: 'DELETE', body: { id } });
+}
+export async function pharmacyBulkCreate(payload) {
+  return apiFetch('pharmacies_bulk_create.php', { method: 'POST', body: payload });
+}
+
+export async function pharmacyGetByDate(city, date = null) {
+  const params = { city };
+  if (date) params.date = date;
+  return apiFetch('pharmacies_get_by_date.php', { params });
+}
+
+export async function pharmacyGetMonth(city, year, month) {
+  return apiFetch('pharmacies_get_month.php', { params: { city, year, month } });
 }
 
 export async function categoryCreate(payload) {

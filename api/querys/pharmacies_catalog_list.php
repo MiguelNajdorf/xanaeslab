@@ -9,8 +9,6 @@ require_http_method(['GET']);
 $pdo = get_pdo();
 
 $city = get_query_param('city');
-$dateFrom = get_query_param('date_from');
-$dateTo = get_query_param('date_to');
 $limit = (int)get_query_param('limit', '100');
 $offset = (int)get_query_param('offset', '0');
 
@@ -19,35 +17,17 @@ $where = [];
 $params = [];
 
 if ($city !== null && trim($city) !== '') {
-    $where[] = 'pd.city = :city';
+    $where[] = 'p.city = :city';
     $params[':city'] = trim($city);
-}
-
-if ($dateFrom !== null && trim($dateFrom) !== '') {
-    $where[] = 'pd.date >= :date_from';
-    $params[':date_from'] = trim($dateFrom);
-}
-
-if ($dateTo !== null && trim($dateTo) !== '') {
-    $where[] = 'pd.date <= :date_to';
-    $params[':date_to'] = trim($dateTo);
 }
 
 $whereClause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
 
-$sql = "SELECT pd.*, 
-               p.name as pharmacy_name,
-               p.address,
-               p.phone,
-               p.latitude,
-               p.longitude,
-               p.neighborhood_id,
-               n.name as neighborhood_name
-        FROM pharmacies_on_duty pd
-        JOIN pharmacies p ON pd.pharmacy_id = p.id
-        LEFT JOIN neighborhoods n ON p.neighborhood_id = n.id
+$sql = "SELECT p.*, n.name as neighborhood_name 
+        FROM pharmacies p 
+        LEFT JOIN neighborhoods n ON p.neighborhood_id = n.id 
         $whereClause
-        ORDER BY pd.date DESC, pd.city
+        ORDER BY p.city, p.name
         LIMIT :limit OFFSET :offset";
 
 $stmt = $pdo->prepare($sql);
@@ -61,7 +41,7 @@ $stmt->execute();
 $items = $stmt->fetchAll();
 
 // Get total count
-$countSql = "SELECT COUNT(*) FROM pharmacies_on_duty pd $whereClause";
+$countSql = "SELECT COUNT(*) FROM pharmacies p $whereClause";
 $countStmt = $pdo->prepare($countSql);
 foreach ($params as $key => $value) {
     $countStmt->bindValue($key, $value);

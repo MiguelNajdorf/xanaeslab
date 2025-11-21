@@ -101,7 +101,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       items.forEach((item) => {
         const option = document.createElement('option');
         option.value = item.id;
-        option.textContent = `${item.name} ${item.brand ? `(${item.brand})` : ''}`.trim();
+        // Show "Product - Brand - Size" format
+        const brandName = item.brand_name || item.brand || '';
+        const size = item.size || '';
+        let displayText = item.name;
+        if (brandName) displayText += ` - ${brandName}`;
+        if (size) displayText += ` - ${size}`;
+        option.textContent = displayText;
         option.dataset.dynamic = '1';
         select.appendChild(option);
       });

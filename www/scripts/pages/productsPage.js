@@ -6,6 +6,7 @@ import {
   productDelete,
   productsBulkUpload,
   brandsList,
+  categoriesList,
 } from '../apiClient.js';
 
 const table = document.getElementById('products-table');
@@ -36,6 +37,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     pageStatus.classList.add('error');
     disablePage();
     return;
+  }
+
+  // Load categories for selects
+  try {
+    const categoriesData = await categoriesList({ limit: 500 });
+    const categories = categoriesData.items || categoriesData.results || [];
+    console.log('Categories loaded:', categories.length, categories);
+
+    if (categories.length === 0) {
+      console.warn('No categories found in database');
+      pageStatus.textContent = 'Advertencia: No hay categorías en la base de datos.';
+      pageStatus.classList.add('error');
+    }
+
+    const categorySelects = document.querySelectorAll('select[name="category_id"]');
+    console.log('Category selects found:', categorySelects.length);
+
+    categorySelects.forEach(select => {
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category.id;
+        option.textContent = category.name;
+        select.appendChild(option);
+      });
+    });
+  } catch (e) {
+    console.error('Error loading categories', e);
+    pageStatus.textContent = 'Error cargando categorías: ' + e.message;
+    pageStatus.classList.add('error');
   }
 
   // Load brands for select
@@ -183,7 +213,7 @@ function select(item) {
 
 function disablePage() {
   searchForm?.querySelectorAll('input,button').forEach((el) => el.setAttribute('disabled', 'disabled'));
-  productForm?.querySelectorAll('input,button').forEach((el) => el.setAttribute('disabled', 'disabled'));
+  productForm?.querySelectorAll('input,button,select').forEach((el) => el.setAttribute('disabled', 'disabled'));
   bulkForm?.querySelectorAll('input,button').forEach((el) => el.setAttribute('disabled', 'disabled'));
 }
 

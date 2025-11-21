@@ -20,6 +20,7 @@ $currency = trim((string)($data['currency'] ?? 'ARS'));
 $validFrom = trim((string)$data['valid_from']);
 $validTo = isset($data['valid_to']) && $data['valid_to'] !== '' ? trim((string)$data['valid_to']) : null;
 $promoTypeId = isset($data['promo_type_id']) && $data['promo_type_id'] !== '' ? (int)$data['promo_type_id'] : null;
+$restrictions = isset($data['restrictions']) && trim($data['restrictions']) !== '' ? trim($data['restrictions']) : null;
 
 // Validate price
 if ($price < 0) {
@@ -81,8 +82,8 @@ if ($stmt->fetch()) {
 
 // Insert price
 $sql = 'INSERT INTO prices 
-        (supermarket_id, product_id, price, currency, valid_from, valid_to, promo_type_id)
-        VALUES (:supermarket_id, :product_id, :price, :currency, :valid_from, :valid_to, :promo_type_id)';
+        (supermarket_id, product_id, price, currency, valid_from, valid_to, promo_type_id, restrictions)
+        VALUES (:supermarket_id, :product_id, :price, :currency, :valid_from, :valid_to, :promo_type_id, :restrictions)';
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([
@@ -93,6 +94,7 @@ $stmt->execute([
     ':valid_from' => $validFrom,
     ':valid_to' => $validTo,
     ':promo_type_id' => $promoTypeId,
+    ':restrictions' => $restrictions,
 ]);
 
 $id = (int)$pdo->lastInsertId();

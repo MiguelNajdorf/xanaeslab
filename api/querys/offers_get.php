@@ -48,6 +48,7 @@ $stmt = $pdo->prepare('
         po.valid_to,
         po.promo_type_id,
         pt.name AS promo_type_name,
+        po.restrictions,
         po.confidence_score
     FROM parsed_offers po
     LEFT JOIN promo_types pt ON po.promo_type_id = pt.id

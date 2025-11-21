@@ -69,11 +69,23 @@ try {
     }
 
     // 3. Create Product
-    // Check for duplicate product name to avoid error
-    $stmt = $pdo->prepare('SELECT id FROM products WHERE name = :name LIMIT 1');
-    $stmt->execute([':name' => $name]);
+    // Check for duplicate product (same name + brand + size + unit)
+    $stmt = $pdo->prepare('
+        SELECT id FROM products 
+        WHERE name = :name 
+        AND brand = :brand 
+        AND size = :size 
+        AND unit = :unit 
+        LIMIT 1
+    ');
+    $stmt->execute([
+        ':name' => $name,
+        ':brand' => $brand,
+        ':size' => $size,
+        ':unit' => $unit
+    ]);
     if ($stmt->fetch()) {
-        throw new Exception('Ya existe un producto con este nombre.');
+        throw new Exception('Ya existe un producto con este nombre, marca, tamaño y unidad.');
     }
 
     $stmt = $pdo->prepare('

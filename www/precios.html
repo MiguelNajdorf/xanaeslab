@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es-AR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Precios por supermercado</title>
   <link rel="stylesheet" href="./styles/forms.css" />
 </head>
+
 <body>
   <main class="form-shell">
     <section class="panel stack" style="max-width: 1080px;">
@@ -47,11 +49,15 @@
         <form id="price-filters" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
           <label>
             <span>Supermercado</span>
-            <select name="supermarket_id"><option value="">Todos</option></select>
+            <select name="supermarket_id">
+              <option value="">Todos</option>
+            </select>
           </label>
           <label>
             <span>Producto</span>
-            <select name="product_id"><option value="">Todos</option></select>
+            <select name="product_id">
+              <option value="">Todos</option>
+            </select>
           </label>
           <label><span>Precio máximo</span><input type="number" name="price_max" step="0.01" min="0" /></label>
           <label><span>Actualizado desde</span><input type="date" name="updated_since" /></label>
@@ -75,6 +81,8 @@
       </section>
     </section>
   </main>
+  <script type="module" src="./scripts/components/adminNav.js"></script>
   <script type="module" src="./scripts/pages/pricesPage.js"></script>
 </body>
+
 </html>

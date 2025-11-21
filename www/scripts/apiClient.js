@@ -320,6 +320,50 @@ export async function brandDelete(id) {
   return apiFetch('brands_delete.php', { method: 'DELETE', body: { id } });
 }
 
+export async function neighborhoodsList(filters = {}) {
+  return apiFetch('neighborhoods_list.php', { params: filters });
+}
+
+export async function neighborhoodCreate(payload) {
+  return apiFetch('neighborhoods_create.php', { method: 'POST', body: payload });
+}
+
+export async function neighborhoodUpdate(id, payload) {
+  return apiFetch('neighborhoods_update.php', { method: 'PATCH', params: { id }, body: payload });
+}
+
+export async function neighborhoodDelete(id) {
+  return apiFetch('neighborhoods_delete.php', { method: 'DELETE', body: { id } });
+}
+
+export async function schedulesList(neighborhoodId) {
+  return apiFetch('schedules_list.php', { params: { neighborhood_id: neighborhoodId } });
+}
+
+export async function scheduleCreate(payload) {
+  return apiFetch('schedules_create.php', { method: 'POST', body: payload });
+}
+
+export async function scheduleDelete(id) {
+  return apiFetch('schedules_delete.php', { method: 'DELETE', body: { id } });
+}
+
+export async function pharmaciesList(filters = {}) {
+  return apiFetch('pharmacies_list.php', { params: filters });
+}
+
+export async function pharmacyCreate(payload) {
+  return apiFetch('pharmacies_create.php', { method: 'POST', body: payload });
+}
+
+export async function pharmacyUpdate(id, payload) {
+  return apiFetch('pharmacies_update.php', { method: 'PATCH', params: { id }, body: payload });
+}
+
+export async function pharmacyDelete(id) {
+  return apiFetch('pharmacies_delete.php', { method: 'DELETE', body: { id } });
+}
+
 export async function categoryCreate(payload) {
   return apiFetch('categories_create.php', { method: 'POST', body: payload });
 }

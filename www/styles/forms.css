@@ -156,3 +156,75 @@ details summary {
   cursor: pointer;
   font-weight: 600;
 }
+
+/* Admin Navigation */
+.admin-nav {
+  background: #1e293b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+}
+
+.admin-nav li {
+  margin: 0;
+}
+
+.admin-nav a,
+.admin-nav .logout-btn {
+  display: block;
+  padding: 0.5rem 1rem;
+  color: #e2e8f0;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.admin-nav a:hover,
+.admin-nav .logout-btn:hover {
+  background: #334155;
+  color: #ffffff;
+}
+
+.admin-nav a.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.admin-nav .logout-item {
+  margin-left: auto;
+}
+
+.admin-nav .logout-btn {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.admin-nav .logout-btn:hover {
+  background: #b91c1c;
+}
+
+/* Adjust form-shell for nav */
+body:has(.admin-nav) .form-shell {
+  padding-top: 1rem;
+}
+

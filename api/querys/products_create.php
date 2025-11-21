@@ -27,6 +27,19 @@ if (!$stmt->fetch()) {
     json_error('VALIDATION_ERROR', 'Categoría inválida.', ['category_id' => 'No existe.'], 422);
 }
 
+$brandId = null;
+if (!empty($data['brand_id'])) {
+    if (!ctype_digit((string)$data['brand_id'])) {
+        send_validation_error(['brand_id' => 'Debe ser entero.']);
+    }
+    $stmt = $pdo->prepare('SELECT id FROM brands WHERE id = :id');
+    $stmt->execute([':id' => (int)$data['brand_id']]);
+    if (!$stmt->fetch()) {
+        json_error('VALIDATION_ERROR', 'Marca inválida.', ['brand_id' => 'No existe.'], 422);
+    }
+    $brandId = (int)$data['brand_id'];
+}
+
 if (!empty($data['barcode'])) {
     $stmt = $pdo->prepare('SELECT COUNT(*) FROM products WHERE barcode = :barcode');
     $stmt->execute([':barcode' => $data['barcode']]);
@@ -35,12 +48,12 @@ if (!empty($data['barcode'])) {
     }
 }
 
-$sql = 'INSERT INTO products (name, brand, barcode, unit, size, category_id, created_at, updated_at) '
-    . 'VALUES (:name, :brand, :barcode, :unit, :size, :category_id, NOW(), NOW())';
+$sql = 'INSERT INTO products (name, brand_id, barcode, unit, size, category_id, created_at, updated_at) '
+    . 'VALUES (:name, :brand_id, :barcode, :unit, :size, :category_id, NOW(), NOW())';
 $stmt = $pdo->prepare($sql);
 $stmt->execute([
     ':name' => trim((string)$data['name']),
-    ':brand' => isset($data['brand']) && $data['brand'] !== null ? trim((string)$data['brand']) : null,
+    ':brand_id' => $brandId,
     ':barcode' => isset($data['barcode']) && $data['barcode'] !== '' ? trim((string)$data['barcode']) : null,
     ':unit' => trim((string)$data['unit']),
     ':size' => trim((string)$data['size']),

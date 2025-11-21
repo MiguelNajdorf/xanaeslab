@@ -12,7 +12,7 @@ $conditions = ['1=1'];
 
 $q = trim((string)get_query_param('q', ''));
 if ($q !== '') {
-    $conditions[] = '(p.name LIKE :q OR p.brand LIKE :q OR p.barcode LIKE :q)';
+    $conditions[] = '(p.name LIKE :q OR b.name LIKE :q OR p.barcode LIKE :q)';
     $params[':q'] = '%' . $q . '%';
 }
 
@@ -33,14 +33,16 @@ if ($barcode !== '') {
 
 [$limit, $offset, $page] = parse_pagination();
 
-$countSql = 'SELECT COUNT(*) FROM products p WHERE ' . implode(' AND ', $conditions);
+$countSql = 'SELECT COUNT(*) FROM products p LEFT JOIN brands b ON b.id = p.brand_id WHERE ' . implode(' AND ', $conditions);
 $stmt = $pdo->prepare($countSql);
 $stmt->execute($params);
 $total = (int)$stmt->fetchColumn();
 
-$sql = 'SELECT p.id, p.name, p.brand, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
-    . 'c.name AS category_name, c.slug AS category_slug '
-    . 'FROM products p LEFT JOIN categories c ON c.id = p.category_id '
+$sql = 'SELECT p.id, p.name, p.brand_id, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
+    . 'c.name AS category_name, c.slug AS category_slug, b.name AS brand_name '
+    . 'FROM products p '
+    . 'LEFT JOIN categories c ON c.id = p.category_id '
+    . 'LEFT JOIN brands b ON b.id = p.brand_id '
     . 'WHERE ' . implode(' AND ', $conditions)
     . ' ORDER BY p.name ASC LIMIT :limit OFFSET :offset';
 $stmt = $pdo->prepare($sql);

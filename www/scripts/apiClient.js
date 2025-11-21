@@ -76,8 +76,8 @@ function persistTokensFromResponse(data) {
   }
 
   if (data.accessToken || data.refreshToken) {
-   
-    
+
+
     saveTokens(data.accessToken || null, data.refreshToken || null);
   } else {
   }
@@ -86,16 +86,16 @@ function persistTokensFromResponse(data) {
 let refreshPromise = null;
 
 async function requestTokenRefresh() {
-  
+
   // Si ya hay una petición de refresh en curso, la devuelve
   if (refreshPromise) {
     return refreshPromise;
   }
 
-  
+
   refreshPromise = (async () => {
     const refreshToken = getRefreshToken();
-    
+
     if (!refreshToken) {
       const error = new Error('Sesión expirada. Iniciá sesión nuevamente.');
       error.status = 401;
@@ -147,38 +147,38 @@ async function apiFetch(endpoint, options = {}) {
 
   const url = buildUrl(endpoint, params);
 
- // --- FUNCIÓN INTERNA PARA HACER LA PETICIÓN ---
-const makeRequest = async (requestType = 'Inicial') => {
+  // --- FUNCIÓN INTERNA PARA HACER LA PETICIÓN ---
+  const makeRequest = async (requestType = 'Inicial') => {
 
-  const initHeaders = {
-    Accept: 'application/json',
-    ...headers,
-  };
+    const initHeaders = {
+      Accept: 'application/json',
+      ...headers,
+    };
 
-  let tokenToUse = null;
-  if (!skipAuth) {
-    tokenToUse = getAccessToken();
-    
-    if (tokenToUse) {
-  initHeaders['X-Authorization'] = `Bearer ${tokenToUse}`;
+    let tokenToUse = null;
+    if (!skipAuth) {
+      tokenToUse = getAccessToken();
+
+      if (tokenToUse) {
+        initHeaders['X-Authorization'] = `Bearer ${tokenToUse}`;
+      }
+    } else {
+      console.log(` OMITIENDO autenticación`);
     }
-  } else {
-    console.log(` OMITIENDO autenticación`);
-  }
 
-  const init = {
-    method,
-    headers: initHeaders,
+    const init = {
+      method,
+      headers: initHeaders,
+    };
+
+    if (body !== undefined) {
+      init.headers['Content-Type'] = 'application/json';
+      init.body = JSON.stringify(body);
+    }
+
+    return fetch(url, init);
   };
-
-  if (body !== undefined) {
-    init.headers['Content-Type'] = 'application/json';
-    init.body = JSON.stringify(body);
-  }
-
-  return fetch(url, init);
-};
-// --- FIN DE LA FUNCIÓN INTERNA ---
+  // --- FIN DE LA FUNCIÓN INTERNA ---
 
   let response = await makeRequest('inicial');
 
@@ -300,12 +300,32 @@ export async function categoryGet(id) {
   return apiFetch('categories_get.php', { params: { id } });
 }
 
+export async function brandsList(filters = {}) {
+  return apiFetch('brands_list.php', { params: filters });
+}
+
+export async function brandGet(id) {
+  return apiFetch('brands_get.php', { params: { id } });
+}
+
+export async function brandCreate(payload) {
+  return apiFetch('brands_create.php', { method: 'POST', body: payload });
+}
+
+export async function brandUpdate(id, payload) {
+  return apiFetch('brands_update.php', { method: 'PATCH', params: { id }, body: payload });
+}
+
+export async function brandDelete(id) {
+  return apiFetch('brands_delete.php', { method: 'DELETE', body: { id } });
+}
+
 export async function categoryCreate(payload) {
   return apiFetch('categories_create.php', { method: 'POST', body: payload });
 }
 
 export async function categoryUpdate(id, payload) {
-  return apiFetch('categories_update.php', { method: 'PATCH', body: { id, ...payload } });
+  return apiFetch('categories_update.php', { method: 'PATCH', params: { id }, body: payload });
 }
 
 export async function categoryDelete(id) {
@@ -325,7 +345,7 @@ export async function productCreate(payload) {
 }
 
 export async function productUpdate(id, payload) {
-  return apiFetch('products_update.php', { method: 'PATCH', body: { id, ...payload } });
+  return apiFetch('products_update.php', { method: 'PATCH', params: { id }, body: payload });
 }
 
 export async function productDelete(id) {

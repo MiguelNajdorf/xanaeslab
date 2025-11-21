@@ -40,7 +40,7 @@ if (isset($data['name'])) {
     $params[':name'] = trim((string)$data['name']);
 }
 
-foreach (['brand', 'unit', 'size'] as $field) {
+foreach (['unit', 'size'] as $field) {
     if (array_key_exists($field, $data)) {
         if ($data[$field] !== null && !is_string($data[$field])) {
             send_validation_error([$field => 'Debe ser texto o null.']);
@@ -48,6 +48,21 @@ foreach (['brand', 'unit', 'size'] as $field) {
         $fields[] = "$field = :$field";
         $params[":" . $field] = $data[$field] === null ? null : trim((string)$data[$field]);
     }
+}
+
+if (array_key_exists('brand_id', $data)) {
+    if ($data['brand_id'] !== null && !ctype_digit((string)$data['brand_id'])) {
+        send_validation_error(['brand_id' => 'Debe ser entero o null.']);
+    }
+    if ($data['brand_id'] !== null) {
+        $stmt = $pdo->prepare('SELECT id FROM brands WHERE id = :id');
+        $stmt->execute([':id' => (int)$data['brand_id']]);
+        if (!$stmt->fetch()) {
+            json_error('VALIDATION_ERROR', 'Marca inválida.', ['brand_id' => 'No existe.'], 422);
+        }
+    }
+    $fields[] = 'brand_id = :brand_id';
+    $params[':brand_id'] = $data['brand_id'] === null ? null : (int)$data['brand_id'];
 }
 
 if (array_key_exists('barcode', $data)) {

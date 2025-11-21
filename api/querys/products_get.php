@@ -12,9 +12,12 @@ if ($id === null || !ctype_digit((string)$id)) {
 }
 
 $pdo = get_pdo();
-$sql = 'SELECT p.id, p.name, p.brand, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
-    . 'c.name AS category_name, c.slug AS category_slug '
-    . 'FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = :id';
+$sql = 'SELECT p.id, p.name, p.brand_id, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
+    . 'c.name AS category_name, c.slug AS category_slug, b.name AS brand_name '
+    . 'FROM products p '
+    . 'LEFT JOIN categories c ON c.id = p.category_id '
+    . 'LEFT JOIN brands b ON b.id = p.brand_id '
+    . 'WHERE p.id = :id';
 $stmt = $pdo->prepare($sql);
 $stmt->execute([':id' => (int)$id]);
 $product = $stmt->fetch();

@@ -10,56 +10,6 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../auth.php';
 
-try {
-    require_http_method(['POST']);
-    require_admin();
-
-// Check if file was uploaded
-if (!isset($_FILES['image']) || $_FILES['image']['error'] === UPLOAD_ERR_NO_FILE) {
-    json_error('No se ha subido ninguna imagen', 400);
-}
-
-$supermarketId = (int)($_POST['supermarket_id'] ?? 0);
-if ($supermarketId <= 0) {
-    json_error('ID de supermercado inválido', 400);
-}
-
-// Validate supermarket exists
-$pdo = get_pdo();
-$stmt = $pdo->prepare('SELECT id FROM supermarkets WHERE id = :id');
-$stmt->execute([':id' => $supermarketId]);
-if (!$stmt->fetch()) {
-    json_error('El supermercado especificado no existe', 404);
-}
-
-$file = $_FILES['image'];
-$allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-$maxSize = 10 * 1024 * 1024; // 10MB
-
-// Validate file type
-$finfo = new finfo(FILEINFO_MIME_TYPE);
-$mimeType = $finfo->file($file['tmp_name']);
-
-if (!in_array($mimeType, $allowedTypes)) {
-    json_error('Tipo de archivo no permitido. Solo JPG, PNG y WebP.', 400);
-}
-
-// Validate file size
-if ($file['size'] > $maxSize) {
-    json_error('El archivo es demasiado grande. Máximo 10MB.', 400);
-}
-
-// Create upload directory if not exists
-$uploadDir = __DIR__ . '/../uploads/offers/';
-if (!is_dir($uploadDir)) {
-    if (!mkdir($uploadDir, 0755, true)) {
-        json_error('Error interno: No se pudo crear el directorio de subida', 500);
-    }
-}
-
-// Generate unique filename
-$extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-$filename = $supermarketId . '_' . uniqid() . '.' . $extension;
 $destination = $uploadDir . $filename;
 
 // Move uploaded file

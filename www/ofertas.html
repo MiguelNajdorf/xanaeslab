@@ -238,6 +238,57 @@
         </div>
     </div>
 
+    <!-- Quick Add Product Modal -->
+    <dialog id="quick-add-modal">
+        <form id="quick-add-form">
+            <h2>Crear Nuevo Producto</h2>
+            <p class="help-text">Crea un producto rápidamente para asignarlo a la oferta.</p>
+
+            <label>
+                <span>Nombre del Producto</span>
+                <input type="text" name="name" id="qa-name" required>
+            </label>
+
+            <div style="display: flex; gap: 10px;">
+                <label style="flex: 1;">
+                    <span>Marca (Opcional)</span>
+                    <input type="text" name="brand" id="qa-brand">
+                </label>
+                <label style="flex: 1;">
+                    <span>Categoría</span>
+                    <input type="text" name="category_name" id="qa-category" list="categories-list" required
+                        placeholder="Escribe o selecciona...">
+                    <datalist id="categories-list">
+                        <!-- Populated by JS -->
+                    </datalist>
+                </label>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <label style="flex: 1;">
+                    <span>Unidad</span>
+                    <select name="unit" id="qa-unit">
+                        <option value="u">Unidad (u)</option>
+                        <option value="kg">Kilogramo (kg)</option>
+                        <option value="g">Gramo (g)</option>
+                        <option value="lt">Litro (lt)</option>
+                        <option value="ml">Mililitro (ml)</option>
+                    </select>
+                </label>
+                <label style="flex: 1;">
+                    <span>Tamaño/Peso</span>
+                    <input type="text" name="size" id="qa-size" value="1" required>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary"
+                    onclick="document.getElementById('quick-add-modal').close()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear y Seleccionar</button>
+            </div>
+        </form>
+    </dialog>
+
     <script type="module" src="scripts/pages/offersPage.js"></script>
 </body>
 

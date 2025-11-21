@@ -497,6 +497,10 @@ export async function offerDelete(id) {
   return apiFetch('offers_delete.php', { method: 'POST', body: { id } });
 }
 
+export async function productCreateQuick(data) {
+  return apiFetch('products_quick_create.php', { method: 'POST', body: data });
+}
+
 // Helper to handle fetch response consistent with apiFetch
 async function handleResponse(response) {
   const text = await response.text();

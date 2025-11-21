@@ -12,7 +12,7 @@ $data = read_json_input();
 $id = (int)($data['id'] ?? 0);
 
 if ($id <= 0) {
-    json_error('ID inválido', 400);
+    json_error('VALIDATION_ERROR', 'ID inválido', [], 400);
 }
 
 $pdo = get_pdo();
@@ -23,7 +23,7 @@ $stmt->execute([':id' => $id]);
 $offer = $stmt->fetch();
 
 if (!$offer) {
-    json_error('Oferta no encontrada', 404);
+    json_error('NOT_FOUND', 'Oferta no encontrada', [], 404);
 }
 
 try {
@@ -32,7 +32,7 @@ try {
     $stmt->execute([':id' => $id]);
 
     // Delete physical file
-    $imagePath = __DIR__ . '/../uploads/' . $offer['image_path'];
+    $imagePath = __DIR__ . '/../' . $offer['image_path'];
     if (file_exists($imagePath)) {
         @unlink($imagePath);
     }
@@ -40,5 +40,5 @@ try {
     json_success(['message' => 'Oferta eliminada correctamente']);
 
 } catch (PDOException $e) {
-    json_error('Error al eliminar oferta: ' . $e->getMessage(), 500);
+    json_error('DB_ERROR', 'Error al eliminar oferta: ' . $e->getMessage(), [], 500);
 }

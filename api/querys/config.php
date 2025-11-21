@@ -3,6 +3,9 @@
 
 declare(strict_types=1);
 
+// API Keys
+define('GEMINI_API_KEY', 'AIzaSyDIdtbMVJRbYZOF0fZlEm3N5jrpNO3__dY');
+
 // --------------------------------------------------
 // CORS headers (replicates login.php behaviour)
 // --------------------------------------------------

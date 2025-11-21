@@ -5,6 +5,8 @@ import {
     offerProcess,
     offerUpdateStatus,
     offerDelete,
+    productCreateQuick,
+    priceCreate,
     supermarketsList,
     productsList,
     promoTypesList
@@ -126,7 +128,7 @@ function createOfferCard(offer) {
     const processBtn = div.querySelector('.btn-process');
     if (processBtn) {
         processBtn.addEventListener('click', async () => {
-            if (confirm('¿Iniciar procesamiento (simulado)?')) {
+            if (confirm('¿Iniciar procesamiento?')) {
                 try {
                     await offerProcess(offer.id);
                     loadOffers();
@@ -232,17 +234,25 @@ function renderParsedItems(items, supermarketId) {
             <form class="item-form" data-index="${index}">
                 <input type="hidden" name="supermarket_id" value="${supermarketId}">
                 
-                <label>
-                    Producto (Sistema)
-                    <select name="product_id" required class="product-select">
-                        <option value="">Seleccionar Producto...</option>
-                        ${allProducts.map(p => `
-                            <option value="${p.id}" ${p.id == selectedProductId ? 'selected' : ''}>
-                                ${p.name} - ${p.brand} (${p.size})
-                            </option>
-                        `).join('')}
-                    </select>
-                </label>
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <label style="flex: 3;">
+                        Producto (Sistema)
+                        <select name="product_id" required class="product-select">
+                            <option value="">Seleccionar Producto...</option>
+                            ${allProducts.map(p => `
+                                <option value="${p.id}" ${p.id == selectedProductId ? 'selected' : ''}>
+                                    ${p.name} - ${p.brand} (${p.size})
+                                </option>
+                            `).join('')}
+                        </select>
+                    </label>
+                    <button type="button" class="btn btn-secondary btn-sm btn-quick-add" 
+                        data-name="${item.product_name}" 
+                        style="margin-bottom: 15px;"
+                        title="Crear nuevo producto si no existe">
+                        + Nuevo
+                    </button>
+                </div>
                 
                 <div style="display: flex; gap: 10px;">
                     <label style="flex: 1;">
@@ -286,8 +296,97 @@ function renderParsedItems(items, supermarketId) {
         `;
 
         div.querySelector('form').addEventListener('submit', handleItemConfirm);
+
+        // Quick Add Button Logic
+        const qaBtn = div.querySelector('.btn-quick-add');
+        if (qaBtn) {
+            qaBtn.addEventListener('click', () => openQuickAddModal(item.product_name, index));
+        }
+
         container.appendChild(div);
     });
+}
+
+// --- Quick Add Logic ---
+let quickAddTargetIndex = null;
+
+function openQuickAddModal(productName, index) {
+    quickAddTargetIndex = index;
+    const modal = document.getElementById('quick-add-modal');
+    const form = document.getElementById('quick-add-form');
+
+    // Reset and fill
+    form.reset();
+    document.getElementById('qa-name').value = productName;
+
+    // Populate categories datalist if empty
+    const datalist = document.getElementById('categories-list');
+    if (datalist.options.length === 0) {
+        // We need to fetch categories first? 
+        // For now let's assume we might need a way to get them or just let user type.
+        // Ideally we should have loaded categories. 
+        // Let's try to extract unique categories from allProducts if available, 
+        // or we might need a categoriesList endpoint. 
+        // For simplicity, we'll skip pre-filling datalist for now or use what we have.
+    }
+
+    modal.showModal();
+
+    // Handle submit
+    form.onsubmit = handleQuickAddSubmit;
+}
+
+async function handleQuickAddSubmit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const btn = form.querySelector('button[type="submit"]');
+
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    btn.disabled = true;
+    btn.textContent = 'Creando...';
+
+    try {
+        const result = await productCreateQuick(data);
+
+        // Add to local list
+        const newProduct = {
+            id: result.id,
+            name: result.name,
+            brand: data.brand || '',
+            size: data.size || ''
+        };
+        allProducts.push(newProduct);
+
+        // Update ALL dropdowns
+        document.querySelectorAll('.product-select').forEach(select => {
+            const option = document.createElement('option');
+            option.value = newProduct.id;
+            option.textContent = `${newProduct.name} - ${newProduct.brand} (${newProduct.size})`;
+            select.appendChild(option);
+        });
+
+        // Select in the target row
+        if (quickAddTargetIndex !== null) {
+            const targetRow = document.getElementById(`item-${quickAddTargetIndex}`);
+            const select = targetRow.querySelector('.product-select');
+            select.value = newProduct.id;
+
+            // Flash effect
+            select.style.backgroundColor = '#d4edda';
+            setTimeout(() => select.style.backgroundColor = '', 1000);
+        }
+
+        document.getElementById('quick-add-modal').close();
+        alert('Producto creado exitosamente.');
+
+    } catch (error) {
+        alert('Error al crear producto: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Crear y Seleccionar';
+    }
 }
 
 async function handleItemConfirm(e) {

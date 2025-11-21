@@ -10,6 +10,7 @@ const NAV_ITEMS = [
     { label: 'Categorías', href: './categorias.html' },
     { label: 'Productos', href: './productos.html' },
     { label: 'Precios', href: './precios.html' },
+    { label: 'Ofertas', href: './ofertas.html' },
 ];
 
 export async function initAdminNav() {

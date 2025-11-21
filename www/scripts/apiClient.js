@@ -427,6 +427,32 @@ export async function productsBulkUpload(csvBase64) {
   return apiFetch('products_bulk_upload.php', { method: 'POST', body: { csv_base64: csvBase64 } });
 }
 
+// Prices (replaces store_products)
+export async function pricesList(filters = {}) {
+  return apiFetch('prices_list.php', { params: filters });
+}
+
+export async function priceGet(id) {
+  return apiFetch('prices_get.php', { params: { id } });
+}
+
+export async function priceCreate(payload) {
+  return apiFetch('prices_create.php', { method: 'POST', body: payload });
+}
+
+export async function priceUpdate(id, payload) {
+  return apiFetch('prices_update.php', { method: 'PUT', params: { id }, body: payload });
+}
+
+export async function priceDelete(id) {
+  return apiFetch('prices_delete.php', { method: 'DELETE', body: { id } });
+}
+
+export async function promoTypesList(filters = {}) {
+  return apiFetch('promo_types_list.php', { params: filters });
+}
+
+// Legacy store_products functions (deprecated - use prices instead)
 export async function storeProductUpsert(payload) {
   return apiFetch('store_products_upsert.php', { method: 'POST', body: payload });
 }

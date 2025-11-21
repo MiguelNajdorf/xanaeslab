@@ -10,7 +10,7 @@
 
 <body>
   <main class="form-shell">
-    <section class="panel stack" style="max-width: 1080px;">
+    <section class="panel stack" style="max-width: 1200px;">
       <header>
         <h1>Precios por supermercado</h1>
         <p id="page-status" class="status"></p>
@@ -28,17 +28,17 @@
           </label>
           <label><span>Precio</span><input type="number" name="price" min="0" step="0.01" required /></label>
           <label><span>Moneda</span><input name="currency" value="ARS" maxlength="3" required /></label>
+          <label><span>Válido desde</span><input type="date" name="valid_from" required /></label>
+          <label><span>Válido hasta</span><input type="date" name="valid_to" /></label>
           <label>
-            <span>Estado de stock</span>
-            <select name="stock_status">
-              <option value="in_stock">En stock</option>
-              <option value="out_of_stock">Sin stock</option>
-              <option value="unknown">Desconocido</option>
+            <span>Tipo de promoción</span>
+            <select name="promo_type_id">
+              <option value="">Sin promoción</option>
             </select>
           </label>
-          <label><span>Etiqueta promo</span><input name="promo_label" /></label>
           <div class="actions">
             <button type="submit" class="button">Guardar precio</button>
+            <button type="button" id="cancel-edit" class="button" style="display:none;">Cancelar</button>
           </div>
           <p id="price-status" class="status"></p>
         </form>
@@ -59,20 +59,33 @@
               <option value="">Todos</option>
             </select>
           </label>
-          <label><span>Precio máximo</span><input type="number" name="price_max" step="0.01" min="0" /></label>
-          <label><span>Actualizado desde</span><input type="date" name="updated_since" /></label>
+          <label>
+            <span>Tipo de promoción</span>
+            <select name="promo_type_id">
+              <option value="">Todos</option>
+            </select>
+          </label>
+          <label>
+            <span>Mostrar solo activos</span>
+            <select name="active_only">
+              <option value="1">Sí</option>
+              <option value="0">No</option>
+            </select>
+          </label>
           <button type="submit" class="button">Filtrar</button>
         </form>
-        <div class="table-wrapper" style="max-height: 320px; overflow-y: auto;">
+        <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
           <table>
             <thead>
               <tr>
                 <th>Supermercado</th>
                 <th>Producto</th>
                 <th>Precio</th>
-                <th>Moneda</th>
-                <th>Stock</th>
-                <th>Actualizado</th>
+                <th>Desde</th>
+                <th>Hasta</th>
+                <th>Promoción</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody id="price-table"></tbody>

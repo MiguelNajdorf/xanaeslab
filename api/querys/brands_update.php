@@ -22,11 +22,11 @@ if (empty($data)) {
 }
 
 $pdo = get_pdo();
-$stmt = $pdo->prepare('SELECT * FROM categories WHERE id = :id');
+$stmt = $pdo->prepare('SELECT * FROM brands WHERE id = :id');
 $stmt->execute([':id' => (int)$id]);
-$category = $stmt->fetch();
-if (!$category) {
-    json_error('NOT_FOUND', 'Categoría no encontrada.', [], 404);
+$brand = $stmt->fetch();
+if (!$brand) {
+    json_error('NOT_FOUND', 'Marca no encontrada.', [], 404);
 }
 
 $fields = [];
@@ -48,20 +48,13 @@ if (isset($data['slug'])) {
     $params[':slug'] = slugify($data['slug']);
 }
 
-if (array_key_exists('description', $data)) {
-    if ($data['description'] !== null && !is_string($data['description'])) {
-        send_validation_error(['description' => 'Debe ser texto o null.']);
-    }
-    $fields[] = 'description = :description';
-    $params[':description'] = $data['description'] === null ? null : trim((string)$data['description']);
-}
-
 if (empty($fields)) {
     json_error('VALIDATION_ERROR', 'No hay campos válidos para actualizar.', [], 422);
 }
 
+// Check duplicates
 if (isset($params[':name']) || isset($params[':slug'])) {
-    $dupSql = 'SELECT COUNT(*) FROM categories WHERE id <> :id AND (';
+    $dupSql = 'SELECT COUNT(*) FROM brands WHERE id <> :id AND (';
     $cond = [];
     if (isset($params[':name'])) {
         $cond[] = 'name = :name';
@@ -70,13 +63,12 @@ if (isset($params[':name']) || isset($params[':slug'])) {
         $cond[] = 'slug = :slug';
     }
     $dupSql .= implode(' OR ', $cond) . ')';
+    
+    // Filter params for duplicate check to avoid "Invalid parameter number" error
     $dupParams = [':id' => (int)$id];
-    if (isset($params[':name'])) {
-        $dupParams[':name'] = $params[':name'];
-    }
-    if (isset($params[':slug'])) {
-        $dupParams[':slug'] = $params[':slug'];
-    }
+    if (isset($params[':name'])) $dupParams[':name'] = $params[':name'];
+    if (isset($params[':slug'])) $dupParams[':slug'] = $params[':slug'];
+
     $stmt = $pdo->prepare($dupSql);
     $stmt->execute($dupParams);
     if ((int)$stmt->fetchColumn() > 0) {
@@ -85,13 +77,12 @@ if (isset($params[':name']) || isset($params[':slug'])) {
 }
 
 $fields[] = 'updated_at = NOW()';
-$sql = 'UPDATE categories SET ' . implode(', ', $fields) . ' WHERE id = :id';
+$sql = 'UPDATE brands SET ' . implode(', ', $fields) . ' WHERE id = :id';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
-$stmt = $pdo->prepare('SELECT id, name, slug, description FROM categories WHERE id = :id');
+$stmt = $pdo->prepare('SELECT * FROM brands WHERE id = :id');
 $stmt->execute([':id' => (int)$id]);
-$category = $stmt->fetch();
+$brand = $stmt->fetch();
 
-json_success(['category' => $category]);
-
+json_success(['brand' => $brand]);

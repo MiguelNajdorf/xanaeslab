@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es-AR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ABM Productos</title>
   <link rel="stylesheet" href="./styles/forms.css" />
 </head>
+
 <body>
   <main class="form-shell">
     <section class="panel stack" style="max-width: 1080px;">
@@ -53,7 +55,9 @@
           <input type="hidden" name="id" />
           <div class="grid-two">
             <label><span>Nombre</span><input name="name" required /></label>
-            <label><span>Marca</span><input name="brand" /></label>
+            <label><span>Marca</span><select name="brand_id">
+                <option value="">-- Seleccionar --</option>
+              </select></label>
             <label><span>Categoría ID</span><input name="category_id" type="number" min="1" required /></label>
             <label><span>Unidad</span><input name="unit" placeholder="kg, lt, u" required /></label>
             <label><span>Tamaño</span><input name="size" /></label>
@@ -83,4 +87,5 @@
   </main>
   <script type="module" src="./scripts/pages/productsPage.js"></script>
 </body>
+
 </html>

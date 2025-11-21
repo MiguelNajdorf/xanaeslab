@@ -5,6 +5,7 @@ import {
   productUpdate,
   productDelete,
   productsBulkUpload,
+  brandsList,
 } from '../apiClient.js';
 
 const table = document.getElementById('products-table');
@@ -37,6 +38,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Load brands for select
+  try {
+    const brandsData = await brandsList({ limit: 500 });
+    const brands = brandsData.items || brandsData.results || [];
+    const brandSelect = productForm.elements['brand_id'];
+    brands.forEach(brand => {
+      const option = document.createElement('option');
+      option.value = brand.id;
+      option.textContent = brand.name;
+      brandSelect.appendChild(option);
+    });
+  } catch (e) {
+    console.error('Error loading brands', e);
+  }
+
   searchForm?.addEventListener('submit', (event) => {
     event.preventDefault();
     loadProducts(Object.fromEntries(new FormData(searchForm).entries()));
@@ -52,6 +68,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const formData = new FormData(productForm);
     const payload = Object.fromEntries(formData.entries());
     payload.category_id = Number(payload.category_id);
+    if (payload.brand_id) payload.brand_id = Number(payload.brand_id);
+    else payload.brand_id = null;
+
     productStatus.textContent = 'Guardando…';
     productStatus.className = 'status';
     try {
@@ -135,7 +154,7 @@ async function loadProducts(params = {}) {
       tr.innerHTML = `
         <td>${item.id}</td>
         <td>${item.name}</td>
-        <td>${item.brand || ''}</td>
+        <td>${item.brand_name || item.brand || ''}</td>
         <td>${item.category?.name || item.category_name || item.category_id}</td>
         <td>${item.unit}</td>
         <td>${item.size || ''}</td>
@@ -153,7 +172,7 @@ function select(item) {
   selected = item;
   productForm.elements['id'].value = item.id;
   productForm.elements['name'].value = item.name || '';
-  productForm.elements['brand'].value = item.brand || '';
+  productForm.elements['brand_id'].value = item.brand_id || '';
   productForm.elements['category_id'].value = item.category_id || item.category?.id || '';
   productForm.elements['unit'].value = item.unit || '';
   productForm.elements['size'].value = item.size || '';

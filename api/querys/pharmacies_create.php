@@ -15,59 +15,51 @@ $data = read_json_input();
 validate_required($data, [
     'city' => 'string',
     'date' => 'string',
-    'name' => 'string',
-    'address' => 'string',
-    'schedule' => 'string',
+    'pharmacy_id' => 'integer',
 ]);
 
 $city = trim((string)$data['city']);
 $date = trim((string)$data['date']);
-$name = trim((string)$data['name']);
-$address = trim((string)$data['address']);
-$schedule = trim((string)$data['schedule']);
-$neighborhoodId = isset($data['neighborhood_id']) ? (int)$data['neighborhood_id'] : null;
-$phone = isset($data['phone']) ? trim((string)$data['phone']) : null;
-$latitude = isset($data['latitude']) ? (float)$data['latitude'] : null;
-$longitude = isset($data['longitude']) ? (float)$data['longitude'] : null;
+$pharmacyId = (int)$data['pharmacy_id'];
+$schedule = isset($data['schedule']) && trim($data['schedule']) ? trim((string)$data['schedule']) : '08:00 - 08:00';
 
+// Validate city
 if (!in_array($city, ['Rio Segundo', 'Pilar'], true)) {
     send_validation_error(['city' => 'Ciudad inválida. Debe ser Rio Segundo o Pilar.']);
 }
 
+// Validate date format
+$dateObj = DateTime::createFromFormat('Y-m-d', $date);
+if (!$dateObj || $dateObj->format('Y-m-d') !== $date) {
+    send_validation_error(['date' => 'Formato de fecha inválido. Use YYYY-MM-DD.']);
+}
+
 $pdo = get_pdo();
 
-// Validate neighborhood if provided
-if ($neighborhoodId !== null) {
-    $stmt = $pdo->prepare('SELECT id FROM neighborhoods WHERE id = :id AND city = :city');
-    $stmt->execute([':id' => $neighborhoodId, ':city' => $city]);
-    if (!$stmt->fetch()) {
-        send_validation_error(['neighborhood_id' => 'Barrio no encontrado o no pertenece a la ciudad seleccionada.']);
-    }
+// Verify pharmacy exists and belongs to this city
+$stmt = $pdo->prepare('SELECT name FROM pharmacies WHERE id = :id AND city = :city');
+$stmt->execute([':id' => $pharmacyId, ':city' => $city]);
+$pharmacy = $stmt->fetch();
+if (!$pharmacy) {
+    json_error('VALIDATION_ERROR', 'La farmacia seleccionada no existe o no pertenece a esta ciudad.', ['pharmacy_id' => 'Inválida'], 422);
 }
 
-// Check for duplicate
-$stmt = $pdo->prepare('SELECT COUNT(*) FROM pharmacies_on_duty WHERE city = :city AND date = :date AND name = :name');
-$stmt->execute([':city' => $city, ':date' => $date, ':name' => $name]);
-if ((int)$stmt->fetchColumn() > 0) {
-    json_error('VALIDATION_ERROR', 'Esta farmacia ya está registrada para esta fecha y ciudad.', ['name' => 'Duplicado'], 422);
+// Check for duplicate (only one pharmacy per city per day)
+$stmt = $pdo->prepare('SELECT p.name FROM pharmacies_on_duty pd JOIN pharmacies p ON pd.pharmacy_id = p.id WHERE pd.city = :city AND pd.date = :date');
+$stmt->execute([':city' => $city, ':date' => $date]);
+$existing = $stmt->fetch();
+if ($existing) {
+    json_error('VALIDATION_ERROR', "Ya existe una farmacia de turno para $city el día $date: {$existing['name']}. Solo puede haber una farmacia por día y ciudad.", ['date' => 'Duplicado'], 422);
 }
 
-$stmt = $pdo->prepare('INSERT INTO pharmacies_on_duty (city, date, name, neighborhood_id, address, schedule, phone, latitude, longitude, created_at, updated_at) VALUES (:city, :date, :name, :neighborhood_id, :address, :schedule, :phone, :latitude, :longitude, NOW(), NOW())');
+$stmt = $pdo->prepare('INSERT INTO pharmacies_on_duty (city, date, pharmacy_id, schedule, created_at, updated_at) VALUES (:city, :date, :pharmacy_id, :schedule, NOW(), NOW())');
 $stmt->execute([
     ':city' => $city,
     ':date' => $date,
-    ':name' => $name,
-    ':neighborhood_id' => $neighborhoodId,
-    ':address' => $address,
+    ':pharmacy_id' => $pharmacyId,
     ':schedule' => $schedule,
-    ':phone' => $phone,
-    ':latitude' => $latitude,
-    ':longitude' => $longitude,
 ]);
 
 $id = (int)$pdo->lastInsertId();
-$stmt = $pdo->prepare('SELECT * FROM pharmacies_on_duty WHERE id = :id');
-$stmt->execute([':id' => $id]);
-$pharmacy = $stmt->fetch();
 
-json_success(['pharmacy' => $pharmacy], 201);
+json_success(['id' => $id, 'message' => 'Turno creado exitosamente.'], 201);

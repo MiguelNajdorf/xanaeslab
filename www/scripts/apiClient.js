@@ -215,7 +215,9 @@ async function apiFetch(endpoint, options = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const error = new Error(data?.error?.message || 'Error en la solicitud');
+    const errorMsg = data?.error?.message || 'Error en la solicitud';
+    console.error('API Error:', response.status, errorMsg, data?.error?.details || data);
+    const error = new Error(errorMsg);
     error.status = response.status;
     error.details = data?.error?.details;
     throw error;
@@ -450,6 +452,68 @@ export async function priceDelete(id) {
 
 export async function promoTypesList(filters = {}) {
   return apiFetch('promo_types_list.php', { params: filters });
+}
+
+// --- OFFERS (LLM) ---
+
+export async function offersUpload(formData) {
+  // Note: When sending FormData, we don't set Content-Type header manually,
+  // browser does it with boundary. apiFetch handles this if body is FormData?
+  // Our apiFetch might need adjustment or we just pass it.
+  // Let's check apiFetch implementation.
+  // It uses JSON.stringify if body is object. We need to handle FormData.
+
+  const token = getAccessToken();
+  const headers = token ? { 'X-Authorization': `Bearer ${token}` } : {};
+
+  const response = await fetch(buildUrl('offers_upload.php'), {
+    method: 'POST',
+    headers: headers,
+    body: formData
+  });
+
+  return handleResponse(response);
+}
+
+export async function offersList(filters = {}) {
+  return apiFetch('offers_list.php', { params: filters });
+}
+
+export async function offerGet(id) {
+  return apiFetch('offers_get.php', { params: { id } });
+}
+
+export async function offerProcess(id) {
+  // Trigger processing manually (for testing)
+  // In production this is done by worker
+  return apiFetch('offers_process.php', { method: 'POST', body: { id } });
+}
+
+export async function offerUpdateStatus(id, status) {
+  return apiFetch('offers_confirm.php', { method: 'POST', body: { id, status } });
+}
+
+export async function offerDelete(id) {
+  return apiFetch('offers_delete.php', { method: 'POST', body: { id } });
+}
+
+// Helper to handle fetch response consistent with apiFetch
+async function handleResponse(response) {
+  const text = await response.text();
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e) {
+    data = { message: text };
+  }
+
+  if (!response.ok) {
+    const error = new Error(data.message || 'Error en la petición');
+    error.status = response.status;
+    error.data = data;
+    throw error;
+  }
+  return data;
 }
 
 // Legacy store_products functions (deprecated - use prices instead)

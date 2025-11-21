@@ -36,9 +36,10 @@ $date = get_query_param('date', '');
 
 if ($activeOnly === '1') {
     $checkDate = $date !== '' ? $date : date('Y-m-d');
-    $conditions[] = 'p.valid_from <= :check_date';
-    $conditions[] = '(p.valid_to IS NULL OR p.valid_to >= :check_date)';
-    $params[':check_date'] = $checkDate;
+    $conditions[] = 'p.valid_from <= :check_date_from';
+    $conditions[] = '(p.valid_to IS NULL OR p.valid_to >= :check_date_to)';
+    $params[':check_date_from'] = $checkDate;
+    $params[':check_date_to'] = $checkDate;
 }
 
 // Pagination

@@ -9,7 +9,8 @@ import {
     priceCreate,
     supermarketsList,
     productsList,
-    promoTypesList
+    promoTypesList,
+    categoriesList
 } from '../apiClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -314,7 +315,7 @@ function renderParsedItems(items, supermarketId) {
 // --- Quick Add Logic ---
 let quickAddTargetIndex = null;
 
-function openQuickAddModal(productName, index) {
+async function openQuickAddModal(productName, index) {
     quickAddTargetIndex = index;
     const modal = document.getElementById('quick-add-modal');
     const form = document.getElementById('quick-add-form');
@@ -326,12 +327,17 @@ function openQuickAddModal(productName, index) {
     // Populate categories datalist if empty
     const datalist = document.getElementById('categories-list');
     if (datalist.options.length === 0) {
-        // We need to fetch categories first? 
-        // For now let's assume we might need a way to get them or just let user type.
-        // Ideally we should have loaded categories. 
-        // Let's try to extract unique categories from allProducts if available, 
-        // or we might need a categoriesList endpoint. 
-        // For simplicity, we'll skip pre-filling datalist for now or use what we have.
+        try {
+            const response = await categoriesList({ limit: 1000 });
+            const categories = response.items || response.results || [];
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.name;
+                datalist.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading categories for datalist:', error);
+        }
     }
 
     modal.showModal();

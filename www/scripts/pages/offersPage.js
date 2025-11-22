@@ -10,7 +10,8 @@ import {
     supermarketsList,
     productsList,
     promoTypesList,
-    categoriesList
+    categoriesList,
+    categorySuggest
 } from '../apiClient.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -340,6 +341,38 @@ async function openQuickAddModal(productName, index) {
         }
     }
 
+    // Suggest Category Button
+    const btnSuggest = document.getElementById('btn-suggest-category');
+    btnSuggest.onclick = async () => {
+        const name = document.getElementById('qa-name').value;
+        const description = document.getElementById('qa-description').value;
+        const brand = document.getElementById('qa-brand').value;
+
+        if (!name) {
+            alert('Por favor ingresa al menos el nombre del producto.');
+            return;
+        }
+
+        const originalText = btnSuggest.textContent;
+        btnSuggest.textContent = '⏳';
+        btnSuggest.disabled = true;
+
+        try {
+            const result = await categorySuggest({ product_name: name, description, brand });
+            if (result && result.category) {
+                document.getElementById('qa-category').value = result.category;
+            } else {
+                alert('No se pudo sugerir una categoría.');
+            }
+        } catch (error) {
+            console.error('Error suggesting category:', error);
+            alert('Error al sugerir categoría.');
+        } finally {
+            btnSuggest.textContent = originalText;
+            btnSuggest.disabled = false;
+        }
+    };
+
     modal.showModal();
 
     // Handle submit
@@ -382,16 +415,16 @@ async function handleQuickAddSubmit(e) {
         // Select in the target row
         if (quickAddTargetIndex !== null) {
             const targetRow = document.getElementById(`item-${quickAddTargetIndex}`);
-            const select = targetRow.querySelector('.product-select');
-            select.value = newProduct.id;
-
-            // Flash effect
-            select.style.backgroundColor = '#d4edda';
-            setTimeout(() => select.style.backgroundColor = '', 1000);
+            if (targetRow) {
+                const select = targetRow.querySelector('.product-select');
+                if (select) {
+                    select.value = newProduct.id;
+                }
+            }
         }
 
         document.getElementById('quick-add-modal').close();
-        alert('Producto creado exitosamente.');
+        alert('Producto creado y seleccionado.');
 
     } catch (error) {
         alert('Error al crear producto: ' + error.message);
@@ -405,37 +438,28 @@ async function handleItemConfirm(e) {
     e.preventDefault();
     const form = e.target;
     const btn = form.querySelector('button[type="submit"]');
-
-    // Convert FormData to object
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
-
-    // Fix types
-    data.supermarket_id = parseInt(data.supermarket_id);
-    data.product_id = parseInt(data.product_id);
-    data.price = parseFloat(data.price);
-    if (data.promo_type_id) data.promo_type_id = parseInt(data.promo_type_id);
-    else delete data.promo_type_id;
-
-    if (!data.valid_to) delete data.valid_to;
 
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
     try {
+        // Create price entry
         await priceCreate(data);
 
-        // Mark visual feedback
-        form.closest('.parsed-item').classList.add('confirmed');
+        // Mark item as confirmed visually
+        const itemDiv = form.closest('.parsed-item');
+        itemDiv.classList.add('confirmed');
         btn.textContent = 'Guardado ✓';
         btn.classList.remove('btn-primary');
         btn.classList.add('btn-success');
 
         // Optional: Disable form inputs
-        Array.from(form.elements).forEach(el => el.disabled = true);
+        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
 
     } catch (error) {
-        alert('Error al crear precio: ' + error.message);
+        alert('Error al guardar precio: ' + error.message);
         btn.disabled = false;
         btn.textContent = 'Confirmar y Crear Precio';
     }
@@ -444,14 +468,15 @@ async function handleItemConfirm(e) {
 async function finishReview() {
     if (!currentOfferId) return;
 
-    if (!confirm('¿Estás seguro de que deseas finalizar la revisión? Esto marcará la oferta como completada.')) {
+    if (!confirm('¿Finalizar revisión y marcar oferta como completada?')) {
         return;
     }
 
     try {
         await offerUpdateStatus(currentOfferId, 'completed');
-        alert('Revisión finalizada.');
         closeReviewInterface();
+        loadOffers();
+        alert('Oferta completada.');
     } catch (error) {
         alert('Error al finalizar: ' + error.message);
     }

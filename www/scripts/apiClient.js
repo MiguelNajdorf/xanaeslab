@@ -405,6 +405,10 @@ export async function categoryDelete(id) {
   return apiFetch('categories_delete.php', { method: 'DELETE', body: { id } });
 }
 
+export async function categorySuggest(payload) {
+  return apiFetch('categories_suggest.php', { method: 'POST', body: payload });
+}
+
 export async function productsList(filters = {}) {
   return apiFetch('products_list.php', { params: filters });
 }
@@ -573,6 +577,7 @@ export const apiClient = {
   categoryCreate,
   categoryUpdate,
   categoryDelete,
+  categorySuggest,
   productsList,
   productGet,
   productCreate,

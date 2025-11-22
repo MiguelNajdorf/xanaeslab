@@ -38,7 +38,7 @@ $stmt = $pdo->prepare($countSql);
 $stmt->execute($params);
 $total = (int)$stmt->fetchColumn();
 
-$sql = 'SELECT p.id, p.name, p.brand_id, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
+$sql = 'SELECT p.id, p.name, p.description, p.brand_id, p.barcode, p.unit, p.size, p.category_id, p.created_at, p.updated_at, '
     . 'c.name AS category_name, c.slug AS category_slug, b.name AS brand_name '
     . 'FROM products p '
     . 'LEFT JOIN categories c ON c.id = p.category_id '

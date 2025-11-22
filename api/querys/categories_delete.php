@@ -12,6 +12,11 @@ if (($user['role'] ?? null) !== 'admin') {
 }
 
 $id = get_query_param('id');
+if ($id === null) {
+    $data = read_json_input();
+    $id = $data['id'] ?? null;
+}
+
 if ($id === null || !ctype_digit((string)$id)) {
     json_error('VALIDATION_ERROR', 'ID inválido.', ['id' => 'Debe ser entero.'], 422);
 }

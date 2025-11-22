@@ -1,0 +1,53 @@
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.tab-button:hover {
+    background-color: #f0f0f0;
+}
+
+.tab-button.active {
+    border-bottom-color: #007bff;
+    color: #007bff;
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.day-card {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 5px;
+    background: #f9f9f9;
+}
+
+.day-card h4 {
+    margin: 0 0 10px 0;
+    color: #333;
+}

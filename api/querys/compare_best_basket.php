@@ -104,7 +104,7 @@ if (!empty($missingProducts)) {
 }
 
 $stmt = $pdo->prepare('SELECT sp.product_id, sp.supermarket_id, sp.price, sp.currency, sp.promo_label, sp.stock_status, sp.updated_at, '
-    . 's.name AS supermarket_name FROM store_products sp '
+    . 's.name AS supermarket_name FROM prices sp '
     . 'JOIN supermarkets s ON s.id = sp.supermarket_id '
     . 'WHERE sp.product_id IN (' . $placeholders . ')');
 $stmt->execute($productIds);

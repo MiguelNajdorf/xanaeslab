@@ -74,7 +74,7 @@ if (($updatedSince = get_query_param('updated_since')) !== null) {
 [$limit, $offset, $page] = parse_pagination();
 
 // Contar total de ofertas
-$countSql = 'SELECT COUNT(*) FROM store_products sp WHERE ' . implode(' AND ', $conditions);
+$countSql = 'SELECT COUNT(*) FROM prices sp WHERE ' . implode(' AND ', $conditions);
 $stmt = $pdo->prepare($countSql);
 $stmt->execute($params);
 $total = (int)$stmt->fetchColumn();
@@ -86,7 +86,7 @@ $sql = 'SELECT sp.id, sp.supermarket_id, sp.product_id, sp.price AS precio_indiv
     . 'NULL AS unidad_base, NULL AS vigencia_desde, NULL AS vigencia_hasta, NULL AS imagen_url, '
     . 's.city AS ciudad, s.name AS supermercado, p.name AS producto, p.brand AS marca, p.size AS presentacion, '
     . 'c.name AS categoria, sp.updated_at, sp.updated_at AS created_at, sp.promo_label, sp.stock_status, sp.currency '
-    . 'FROM store_products sp '
+    . 'FROM prices sp '
     . 'JOIN supermarkets s ON s.id = sp.supermarket_id '
     . 'JOIN products p ON p.id = sp.product_id '
     . 'LEFT JOIN categories c ON c.id = p.category_id '

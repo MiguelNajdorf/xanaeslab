@@ -188,9 +188,24 @@ async function loadProducts(params = {}) {
         <td>${item.category?.name || item.category_name || item.category_id}</td>
         <td>${item.unit}</td>
         <td>${item.size || ''}</td>
-        <td><button type="button" class="button ghost" data-id="${item.id}">Editar</button></td>
+        <td>
+          <button type="button" class="button ghost edit-btn" data-id="${item.id}">Editar</button>
+          <button type="button" class="button ghost danger delete-btn" data-id="${item.id}" style="margin-left: 5px;">Eliminar</button>
+        </td>
       `;
-      tr.querySelector('button').addEventListener('click', () => select(item));
+      tr.querySelector('.edit-btn').addEventListener('click', () => select(item));
+      tr.querySelector('.delete-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!window.confirm(`¿Eliminar producto "${item.name}"?`)) return;
+        try {
+          await productDelete(item.id);
+          await loadProducts(Object.fromEntries(new FormData(searchForm).entries()));
+          productStatus.textContent = 'Producto eliminado.';
+          productStatus.classList.add('success');
+        } catch (error) {
+          alert(error.message || 'No se pudo eliminar');
+        }
+      });
       table.appendChild(tr);
     });
   } catch (error) {

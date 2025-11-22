@@ -3,14 +3,10 @@
 
 declare(strict_types=1);
 
-// API Keys
-define('GEMINI_API_KEY', 'AIzaSyDIdtbMVJRbYZOF0fZlEm3N5jrpNO3__dY');
-
 // --------------------------------------------------
-// CORS headers (replicates login.php behaviour)
+// CORS headers FIRST (before any potential errors)
 // --------------------------------------------------
 if (!defined('XANAESLAB_CORS_APPLIED')) {
-    // Development-friendly: allow multiple origins during local testing
     $allowedOrigins = [
         'http://xanaeslab.local',
         'http://localhost',
@@ -25,10 +21,9 @@ if (!defined('XANAESLAB_CORS_APPLIED')) {
         header('Access-Control-Allow-Origin: http://xanaeslab.local');
     }
 
-
-    // header dynamically set above; using allowlist or default
     header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization');    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Authorization');
+    header('Access-Control-Allow-Credentials: true');
     header('Vary: Origin');
 
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
@@ -39,19 +34,18 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
     define('XANAESLAB_CORS_APPLIED', true);
 }
 
-const DB_HOST = 'localhost';
-const DB_NAME = 'adev_xanaeslab';
-const DB_USER = 'adev_xanaeslab';
-const DB_PASS = 'YermanFerozo768';
-const DB_CHARSET = 'utf8mb4';
+// Temporary: hardcoded values (will move to .env later)
+define('GEMINI_API_KEY', 'AIzaSyC2mJD5IJw1QIgD2mHlrq2_anhIlmZC0p4');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'adev_xanaeslab');
+define('DB_USER', 'adev_xanaeslab');
+define('DB_PASS', 'YermanFerozo768');
+define('DB_CHARSET', 'utf8mb4');
 
 /**
- * Token configuration (shared helpers expect these globals).
+ * Token configuration
  */
-$TOKEN_SECRET = (string)($_ENV['TOKEN_SECRET'] ?? getenv('TOKEN_SECRET') ?? 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min');
-if ($TOKEN_SECRET === '') {
-    $TOKEN_SECRET = 'cambia-esto-por-una-clave-larga-aleatoria-32bytes-min';
-}
+$TOKEN_SECRET = 'cret_key_here-your_random_secret';
 $TOKEN_ISS = 'xanaeslab-api';
 $TOKEN_AUD = 'xanaeslab-client';
 $ACCESS_TTL = 900; // 15 minutes
@@ -187,39 +181,8 @@ function token_verify(string $token): array
     return $payload;
 }
 
-/* function get_bearer_token(): ?string
-{
-    // --- INICIO DE DEBUG ---
-    error_log('--- DEPURACIÓN get_bearer_token() ---');
-    error_log('Contenido de $_SERVER[\'HTTP_AUTHORIZATION\']: ' . ($_SERVER['HTTP_AUTHORIZATION'] ?? 'NULL'));
-    error_log('Contenido de $_SERVER[\'HTTP_X_AUTHORIZATION\']: ' . ($_SERVER['HTTP_X_AUTHORIZATION'] ?? 'NULL'));
-    // --- FIN DE DEBUG ---
-
-    // 1. Intenta con la cabecera estándar primero
-    $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
-    if (is_string($header) && $header !== '') {
-        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
-            error_log('Token encontrado en cabecera estándar.');
-            return $matches[1];
-        }
-    }
-
-    // 2. Si no funciona, intenta con nuestra cabecera personalizada
-    $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
-    if (is_string($customHeader) && $customHeader !== '') {
-        if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
-            error_log('Token encontrado en cabecera personalizada X-Authorization.');
-            return $matches[1];
-        }
-    }
-
-    error_log('--- get_bearer_token() DEVOLVIÓ NULL ---');
-    // 3. Si no se encuentra en ninguna parte, devuelve null
-    return null;
-} */
 function get_bearer_token(): ?string
 {
-    // 1. Intenta con la cabecera estándar primero
     $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
     if (is_string($header) && $header !== '') {
         if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
@@ -227,7 +190,6 @@ function get_bearer_token(): ?string
         }
     }
 
-    // 2. Si no funciona, intenta con nuestra cabecera personalizada
     $customHeader = $_SERVER['HTTP_X_AUTHORIZATION'] ?? '';
     if (is_string($customHeader) && $customHeader !== '') {
         if (preg_match('/^Bearer\s+(\S+)$/i', trim($customHeader), $matches)) {
@@ -235,9 +197,9 @@ function get_bearer_token(): ?string
         }
     }
 
-    // 3. Si no se encuentra en ninguna parte, devuelve null
     return null;
 }
+
 function json_response(int $status, array $payload): void
 {
     http_response_code($status);
@@ -416,4 +378,3 @@ set_exception_handler(function (Throwable $e): void {
         500
     );
 });
-

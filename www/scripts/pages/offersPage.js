@@ -240,10 +240,10 @@ function renderParsedItems(items, supermarketId) {
                         <select name="product_id" required class="product-select">
                             <option value="">Seleccionar Producto...</option>
                             ${allProducts.map(p => `
-                                <option value="${p.id}" ${p.id == selectedProductId ? 'selected' : ''}>
-                                    ${p.name} - ${p.brand} (${p.size})
-                                </option>
-                            `).join('')}
+    <option value="${p.id}" ${p.id == selectedProductId ? 'selected' : ''}>
+        ${p.name}${p.description ? ' - ' + p.description : ''} - ${p.brand || p.brand_name || ''} (${p.size} ${p.unit})
+    </option>
+`).join('')}
                         </select>
                     </label>
                     <button type="button" class="btn btn-secondary btn-sm btn-quick-add" 
@@ -358,8 +358,10 @@ async function handleQuickAddSubmit(e) {
         const newProduct = {
             id: result.id,
             name: result.name,
+            description: data.description || '',
             brand: data.brand || '',
-            size: data.size || ''
+            size: data.size || '',
+            unit: data.unit || 'u'
         };
         allProducts.push(newProduct);
 
@@ -367,7 +369,7 @@ async function handleQuickAddSubmit(e) {
         document.querySelectorAll('.product-select').forEach(select => {
             const option = document.createElement('option');
             option.value = newProduct.id;
-            option.textContent = `${newProduct.name} - ${newProduct.brand} (${newProduct.size})`;
+            option.textContent = `${newProduct.name}${newProduct.description ? ' - ' + newProduct.description : ''} - ${newProduct.brand} (${newProduct.size} ${newProduct.unit})`;
             select.appendChild(option);
         });
 

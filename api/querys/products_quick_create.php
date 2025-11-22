@@ -16,6 +16,7 @@ if (empty($data['name'])) {
 }
 
 $name = trim($data['name']);
+$description = isset($data['description']) && trim($data['description']) !== '' ? trim($data['description']) : null;
 $brand = trim($data['brand'] ?? '');
 $unit = trim($data['unit'] ?? 'u');
 $size = trim($data['size'] ?? '1');
@@ -89,17 +90,18 @@ try {
     }
 
     $stmt = $pdo->prepare('
-        INSERT INTO products (name, brand, brand_id, unit, size, category_id) 
-        VALUES (:name, :brand, :brand_id, :unit, :size, :category_id)
+       INSERT INTO products (name, description, brand, brand_id, unit, size, category_id) 
+VALUES (:name, :description, :brand, :brand_id, :unit, :size, :category_id)
     ');
     
     $stmt->execute([
-        ':name' => $name,
-        ':brand' => $brand ?: null,
-        ':brand_id' => $brandId,
-        ':unit' => $unit,
-        ':size' => $size,
-        ':category_id' => $categoryId
+    ':name' => $name,
+    ':description' => $description,
+    ':brand' => $brand ?: null,
+    ':brand_id' => $brandId,
+    ':unit' => $unit,
+    ':size' => $size,
+    ':category_id' => $categoryId
     ]);
 
     $newProductId = (int)$pdo->lastInsertId();

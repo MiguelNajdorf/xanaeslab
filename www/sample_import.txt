@@ -1,0 +1,8 @@
+id_comercio|id_bandera|id_sucursal|id_producto|productos_ean|productos_descripcion|productos_cantidad_presentacion|productos_unidad_medida_presentacion|productos_marca|productos_precio_lista|productos_precio_referencia|productos_cantidad_referencia|productos_unidad_medida_referencia|productos_precio_unitario_promo1|productos_leyenda_promo1|productos_precio_unitario_promo2|productos_leyenda_promo2
+10|1|63|7790770601899|1|TOALLA NOSOTRAS CLASICAS C CALENDULA X 16U|1|UNI|NOSOTRAS|3200.00|200.00|16|UNI||||
+10|3|711|7790070318398|1|FIDEOS DEDALITOS LUCCHETTI BOLSA X 500 GRS|1|UNI|LUCCHETTI|1559.00|3118.00|500|GRM||||
+10|1|44|7622201808860|1|GALLETITAS BOCA DE DAMA TERRABUSI X 170 GRS|1|UNI|TERRABUSI|1269.00|7464.71|170|GRM||||
+10|2|62|7791293050089|1|ACONDICIONADOR LISO EFECTO BOTOX TRESEMME X 250 CC|1|UNI|TRESEMME|5289.00|21156.00|250|CM3||||
+10|1|147|7791905023210|1|LAVANDINA ORIGINAL ODEX X 2 LT|1|UNI|ODEX|2200.00|1100.00|2000|CM3||||
+10|1|54|7798136041525|1|PERFUME AROMATIZADOR FRESHLINE AQUA SPAR ROMBO|1|UNI|FRESH LINE|4890.00|4890.00|1|UNI||||
+10|1|8|7796384061685|1|JUEGO DE SABANAS PINATA 1 1 2 PL LICENCIA|1|UNI|S/D|44990.00|44990.00|1|UNI||||
